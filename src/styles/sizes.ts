@@ -1,0 +1,62 @@
+import { sm } from "./mixins";
+
+const size = {
+  0: 0,
+  1: sm(1),
+  2: sm(2),
+  4: sm(4),
+  6: sm(6),
+  8: sm(8),
+  10: sm(10),
+  12: sm(12),
+  14: sm(14),
+  16: sm(16),
+  20: sm(20),
+  24: sm(24),
+  28: sm(28),
+  32: sm(32),
+  36: sm(36),
+  40: sm(40),
+  44: sm(44),
+  48: sm(48),
+  56: sm(56),
+  64: sm(64),
+  80: sm(80),
+  96: sm(96),
+  112: sm(112),
+  128: sm(128),
+  144: sm(144),
+  160: sm(160),
+  176: sm(176),
+  192: sm(192),
+  208: sm(208),
+  224: sm(224),
+  240: sm(240),
+  256: sm(256),
+  288: sm(288),
+  320: sm(320),
+  384: sm(384),
+  448: sm(448),
+  512: sm(512),
+};
+
+export const sizes = { size } as const;
+
+const radius = {
+  none: 0,
+  xs: size[4],
+  sm: size[6],
+  md: size[8],
+  lg: size[10],
+  xl: size[12],
+  xl2: size[16],
+  xl3: size[20],
+  xl4: size[24],
+  xl5: size[28],
+  xl6: size[32],
+  xl7: size[36],
+  xl8: size[40],
+  full: 9999,
+};
+
+export const raduises = { radius } as const;
