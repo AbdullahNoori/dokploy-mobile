@@ -10,7 +10,11 @@ import {
   signup,
 } from "@/src/api/auth";
 import { fetchProfile } from "@/src/api/profile";
-import { PAT_STORAGE_KEY, patStorage } from "@/src/lib/pat-storage";
+import {
+  PAT_STORAGE_KEY,
+  patStorage,
+  persistServerUrl,
+} from "@/src/lib/pat-storage";
 
 const USER_KEY = "@dokploy/user";
 
@@ -21,7 +25,7 @@ type AuthState = {
   pat: string | null;
   user: AuthResponse["user"] | null;
   initialize: () => Promise<void>;
-  authenticateWithPat: (pat: string) => Promise<void>;
+  authenticateWithPat: (pat: string, serverUrl?: string | null) => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -80,7 +84,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  authenticateWithPat: async (rawPat: string) => {
+  authenticateWithPat: async (rawPat: string, serverUrl?: string | null) => {
     const pat = rawPat.trim();
 
     if (!pat) {
@@ -88,6 +92,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     try {
+      if (serverUrl) {
+        persistServerUrl(serverUrl);
+      }
+
       const response = await api.get<AuthResponse["user"]>("auth/me", {
         headers: { Authorization: `Bearer ${pat}` },
       });

@@ -15,6 +15,12 @@ import {
 } from "react-native";
 
 import { HttpError } from "@/src/lib/http-error";
+import {
+  getServerHost,
+  getServerUrl,
+  normalizeServerUrl,
+  persistServerUrl,
+} from "@/src/lib/pat-storage";
 import { useAuthStore } from "@/src/store/auth";
 import { StyleSheet } from "@/src/styles/unistyles";
 
@@ -24,6 +30,7 @@ export default function LoginScreen() {
     (state) => state.authenticateWithPat
   );
 
+  const [serverUrl, setServerUrl] = useState(() => getServerUrl() ?? "");
   const [pat, setPat] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [secure, setSecure] = useState(true);
@@ -33,11 +40,15 @@ export default function LoginScreen() {
   const buttonScale = useRef(new Animated.Value(1)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  const backendHost = useMemo(() => {
-    const url = process.env.EXPO_PUBLIC_BACKEND_URL;
-    if (!url) return null;
-    return url.replace(/^https?:\/\//, "").replace(/\/+$/, "");
-  }, []);
+  const backendHost = useMemo(
+    () => getServerHost(serverUrl),
+    [serverUrl]
+  );
+
+  const canSubmit = useMemo(
+    () => !!normalizeServerUrl(serverUrl) && !!pat.trim(),
+    [pat, serverUrl]
+  );
 
   useEffect(() => {
     if (submitting) {
@@ -64,6 +75,14 @@ export default function LoginScreen() {
     }
   }, [buttonScale, submitting]);
 
+  const handleServerChange = useCallback(
+    (value: string) => {
+      setServerUrl(value);
+      if (error) setError(null);
+    },
+    [error]
+  );
+
   const handlePatChange = useCallback(
     (value: string) => {
       setPat(value);
@@ -74,6 +93,12 @@ export default function LoginScreen() {
 
   const handleSubmit = useCallback(async () => {
     const token = pat.trim();
+    const normalizedServer = normalizeServerUrl(serverUrl);
+
+    if (!normalizedServer) {
+      setError("Enter the Dokploy server URL to continue.");
+      return;
+    }
 
     if (!token) {
       setError("Enter your personal access token to continue.");
@@ -84,7 +109,9 @@ export default function LoginScreen() {
     setError(null);
 
     try {
-      await authenticateWithPat(token);
+      const storedServer = persistServerUrl(normalizedServer) ?? normalizedServer;
+      setServerUrl(storedServer);
+      await authenticateWithPat(token, storedServer);
     } catch (err: any) {
       const message =
         err instanceof HttpError ? err.message : err?.message ?? null;
@@ -95,7 +122,7 @@ export default function LoginScreen() {
     } finally {
       setSubmitting(false);
     }
-  }, [authenticateWithPat, pat]);
+  }, [authenticateWithPat, pat, serverUrl]);
 
   if (status === "authenticated") {
     return <Redirect href="/(tabs)" />;
@@ -130,8 +157,8 @@ export default function LoginScreen() {
           </View>
           <Text style={styles.title}>Welcome to Dokploy</Text>
           <Text style={styles.subtitle}>
-            Paste your personal access token to unlock your dashboard.
-            Everything stays on-device.
+            Point this app at your Dokploy cloud or self-hosted instance and
+            paste your personal access token. Everything stays on-device.
           </Text>
           {backendHost ? (
             <View style={styles.badge}>
@@ -142,6 +169,30 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.formCard}>
+          <View style={styles.fieldHeader}>
+            <Text style={styles.label}>Dokploy server URL</Text>
+          </View>
+
+          <View style={styles.inputShell}>
+            <TextInput
+              value={serverUrl}
+              onChangeText={handleServerChange}
+              placeholder="https://cloud.dokploy.com"
+              placeholderTextColor={styles.placeholder.color}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              textContentType="URL"
+              style={styles.input}
+              selectionColor={styles.caret.color}
+              returnKeyType="next"
+            />
+          </View>
+
+          <Text style={styles.hint}>
+            Use your self-hosted Dokploy base URL or the Dokploy Cloud address.
+          </Text>
+
           <View style={styles.fieldHeader}>
             <Text style={styles.label}>Personal access token</Text>
             <TouchableOpacity
@@ -197,10 +248,10 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={[
                 styles.primaryButton,
-                (!pat.trim() || submitting) && styles.primaryButtonDisabled,
+                (!canSubmit || submitting) && styles.primaryButtonDisabled,
               ]}
               onPress={handleSubmit}
-              disabled={!pat.trim() || submitting}
+              disabled={!canSubmit || submitting}
               activeOpacity={0.9}
             >
               {submitting ? (
