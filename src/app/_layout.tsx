@@ -6,10 +6,11 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 import "react-native-reanimated";
 
 import { loadStoredTheme, ThemeName } from "@/src/hooks/theme";
-import { useAuthStore } from "@/src/inspirations/auth-store/authStore";
+import { AuthStatus, useAuthStore } from "@/src/store/auth";
 import { navDarkTheme, navLightTheme } from "@/src/styles/nav-theme";
 import { UnistylesRuntime, useUnistyles } from "react-native-unistyles";
 
@@ -20,7 +21,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: "(tabs)",
+  initialRouteName: "index",
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -28,6 +29,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
+    // inter: require("../assets/fonts/Inter"),
     ...FontAwesome.font,
   });
 
@@ -35,6 +37,7 @@ export default function RootLayout() {
   const navTheme =
     (rt.themeName ?? "light") === "dark" ? navDarkTheme : navLightTheme;
   const status = useAuthStore((state) => state.status);
+  const initializeAuth = useAuthStore((state) => state.initialize);
 
   console.log("curr theme :", UnistylesRuntime.themeName);
 
@@ -55,6 +58,10 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
     }
@@ -66,16 +73,39 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={navTheme}>
-      <RootLayoutNav />
+      <RootLayoutNav status={status} />
     </ThemeProvider>
   );
 }
 
-function RootLayoutNav() {
+function RootLayoutNav({ status }: { status: AuthStatus }) {
+  const { theme } = useUnistyles();
+
+  if (status === "checking") {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
   return (
     <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+      <Stack.Protected guard={status !== "authenticated"}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+      </Stack.Protected>
+
+      <Stack.Protected guard={status === "authenticated"}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+      </Stack.Protected>
     </Stack>
   );
 }

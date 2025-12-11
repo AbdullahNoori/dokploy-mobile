@@ -1,16 +1,7 @@
 import { AxiosRequestConfig } from "axios";
 
-import {
-  api,
-  configureHttpClient as configureApiClient,
-  type AuthInterceptorOptions,
-} from "@/src/lib/api";
+import { api } from "@/src/lib/api";
 import { HttpError } from "./http-error";
-
-export type { AuthInterceptorOptions } from "@/src/lib/api";
-
-export const configureHttpClient = (options: AuthInterceptorOptions) =>
-  configureApiClient(options);
 
 /**
  * Create a http get request

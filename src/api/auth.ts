@@ -16,12 +16,9 @@ export type AuthUser = {
   roles: string[];
 };
 
-export type AuthTokensResponse = {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  expires_in: number;
-  user: AuthUser;
+export type AuthResponse = {
+  token: string;
+  user?: AuthUser;
 };
 
 export type LoginPayload = {
@@ -31,7 +28,7 @@ export type LoginPayload = {
 };
 
 export function login(payload: LoginPayload) {
-  return postRequest<AuthTokensResponse>("auth/login", payload);
+  return postRequest<AuthResponse>("auth/login", payload);
 }
 
 export type SignupPayload = {
@@ -42,11 +39,7 @@ export type SignupPayload = {
 };
 
 export function signup(payload: SignupPayload) {
-  return postRequest<{
-    message: string;
-    email: string;
-    user_id: string;
-  }>("auth/signup", payload);
+  return postRequest<AuthResponse>("auth/signup", payload);
 }
 
 export type VerifyEmailPayload = {
@@ -55,7 +48,7 @@ export type VerifyEmailPayload = {
 };
 
 export function verifyEmail(payload: VerifyEmailPayload) {
-  return postRequest<AuthTokensResponse>("auth/verify-email", payload);
+  return postRequest<AuthResponse>("auth/verify-email", payload);
 }
 
 export type ResendVerificationPayload = {

@@ -12,9 +12,8 @@ import {
   signup as signupRequest,
   updateProfile as updateProfileRequest,
 } from "@/src/api/auth";
-import { configureHttpClient } from "@/src/lib/http";
+import { PAT_STORAGE_KEY, patStorage } from "@/src/lib/pat-storage";
 
-const TOKEN_KEY = "@tarkeeb/tokens";
 const USER_KEY = "@tarkeeb/user";
 
 type AuthStatus = "checking" | "authenticated" | "unauthenticated";
@@ -22,7 +21,7 @@ type AuthStatus = "checking" | "authenticated" | "unauthenticated";
 interface AuthState {
   status: AuthStatus;
   user: AuthUser | null;
-  token: string | null;
+  pat: string | null;
   initialize: () => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<void>;
@@ -32,12 +31,12 @@ interface AuthState {
   setAuthFromResponse: (response: AuthResponse) => Promise<void>;
 }
 
-const persistToken = async (token: string | null) => {
-  if (!token) {
-    await AsyncStorage.removeItem(TOKEN_KEY);
+const persistPat = (pat: string | null) => {
+  if (!pat) {
+    patStorage.delete(PAT_STORAGE_KEY);
     return;
   }
-  await AsyncStorage.setItem(TOKEN_KEY, token);
+  patStorage.set(PAT_STORAGE_KEY, pat);
 };
 
 const persistUser = async (user: AuthUser | null) => {
@@ -49,32 +48,27 @@ const persistUser = async (user: AuthUser | null) => {
 };
 
 const clearStoredAuth = async () => {
-  await Promise.all([
-    AsyncStorage.removeItem(TOKEN_KEY),
-    AsyncStorage.removeItem(USER_KEY),
-  ]);
+  persistPat(null);
+  await AsyncStorage.removeItem(USER_KEY);
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   status: "checking",
   user: null,
-  token: null,
+  pat: null,
 
   initialize: async () => {
     try {
-      const [token, userRaw] = await Promise.all([
-        AsyncStorage.getItem(TOKEN_KEY),
-        AsyncStorage.getItem(USER_KEY),
-      ]);
-
+      const storedPat = patStorage.getString(PAT_STORAGE_KEY);
+      const userRaw = await AsyncStorage.getItem(USER_KEY);
       const user = userRaw ? (JSON.parse(userRaw) as AuthUser) : null;
 
-      if (!token) {
-        set({ token: null, user: null, status: "unauthenticated" });
+      if (!storedPat) {
+        set({ pat: null, user: null, status: "unauthenticated" });
         return;
       }
 
-      set({ token, user, status: "authenticated" });
+      set({ pat: storedPat, user, status: "authenticated" });
 
       if (!user) {
         await get().loadProfile();
@@ -82,7 +76,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       console.warn("Failed to restore auth state", error);
       await clearStoredAuth();
-      set({ token: null, user: null, status: "unauthenticated" });
+      set({ pat: null, user: null, status: "unauthenticated" });
     }
   },
 
@@ -98,7 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     await clearStoredAuth();
-    set({ token: null, user: null, status: "unauthenticated" });
+    set({ pat: null, user: null, status: "unauthenticated" });
   },
 
   loadProfile: async () => {
@@ -119,13 +113,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setAuthFromResponse: async (response) => {
     const { token, user } = response;
-    await persistToken(token);
+
+    persistPat(token);
     if (user) {
       await persistUser(user);
     }
     set((state) => ({
       ...state,
-      token,
+      pat: token,
       user: user ?? state.user,
       status: "authenticated",
     }));
@@ -135,8 +130,3 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 }));
-
-configureHttpClient({
-  getAccessToken: () => useAuthStore.getState().token,
-  onUnauthorized: () => useAuthStore.getState().logout(),
-});
