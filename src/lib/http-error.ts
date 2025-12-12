@@ -12,20 +12,25 @@ export type InputError = {
 };
 
 export class HttpError {
+  private error: AxiosError;
   public code?: string;
   public message?: string;
   public response?: AxiosResponse;
   public config?: InternalAxiosRequestConfig;
   public request?: any;
 
-  constructor(private error: AxiosError) {
-    this.error = error;
+  constructor(error: AxiosError | string) {
+    const normalizedError =
+      typeof error === "string" ? new AxiosError(error) : error;
 
-    this.code = error.code;
-    this.message = extractMessage(error);
-    this.response = error.response;
-    this.config = error.config;
-    this.request = error.request;
+    this.error = normalizedError;
+
+    this.code = normalizedError.code;
+    this.message =
+      typeof error === "string" ? error : extractMessage(normalizedError);
+    this.response = normalizedError.response;
+    this.config = normalizedError.config;
+    this.request = normalizedError.request;
   }
 
   public get getOriginal(): AxiosError {

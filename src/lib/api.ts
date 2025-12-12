@@ -1,12 +1,16 @@
 import axios, { AxiosError } from "axios";
 
-import { PAT_STORAGE_KEY, getServerUrl, patStorage } from "./pat-storage";
+import {
+  PAT_STORAGE_KEY,
+  getApiBaseUrl,
+  getServerUrl,
+  patStorage,
+} from "./pat-storage";
 
 const API_KEY = process.env.EXPO_PUBLIC_DOKPLOY_API;
-const pat = patStorage.getString(PAT_STORAGE_KEY);
 
 export const api = axios.create({
-  baseURL: getServerUrl() ?? undefined,
+  baseURL: getApiBaseUrl() ?? undefined,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -15,16 +19,18 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const serverUrl = getServerUrl();
-  if (!serverUrl) {
+  const baseURL = getApiBaseUrl(config.baseURL ?? getServerUrl());
+
+  if (!baseURL) {
     return Promise.reject(
       new AxiosError("Dokploy server URL is not configured.")
     );
   }
 
-  config.baseURL = serverUrl;
+  config.baseURL = baseURL;
 
-  if (pat) {
+  const pat = patStorage.getString(PAT_STORAGE_KEY);
+  if (pat && !(config.headers as any)?.Authorization) {
     config.headers = config.headers ?? {};
     (config.headers as any).Authorization = `Bearer ${pat}`;
   }

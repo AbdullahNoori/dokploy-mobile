@@ -1,7 +1,6 @@
+import { HttpStatusCode } from "axios";
 import { create } from "zustand";
 
-import { api } from "@/src/lib/api";
-import { HttpError } from "@/src/lib/http-error";
 import {
   AuthResponse,
   LoginPayload,
@@ -9,9 +8,13 @@ import {
   login,
   signup,
 } from "@/src/api/auth";
+import { fetchProjects } from "@/src/api/dashboard";
 import { fetchProfile } from "@/src/api/profile";
+import { HttpError } from "@/src/lib/http-error";
 import {
   PAT_STORAGE_KEY,
+  getServerUrl,
+  normalizeServerUrl,
   patStorage,
   persistServerUrl,
 } from "@/src/lib/pat-storage";
@@ -25,7 +28,10 @@ type AuthState = {
   pat: string | null;
   user: AuthResponse["user"] | null;
   initialize: () => Promise<void>;
-  authenticateWithPat: (pat: string, serverUrl?: string | null) => Promise<void>;
+  authenticateWithPat: (
+    pat: string,
+    serverUrl?: string | null
+  ) => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -52,6 +58,35 @@ const persistUser = async (user: AuthResponse["user"] | null) => {
 const clearStoredAuth = async () => {
   persistPat(null);
   patStorage.remove(USER_KEY);
+};
+
+const validatePatAndServer = async (pat: string, serverUrl: string) => {
+  try {
+    await fetchProjects({
+      baseURL: serverUrl,
+      headers: { Authorization: `Bearer ${pat}` },
+    });
+  } catch (error: any) {
+    const normalizedError =
+      error instanceof HttpError ? error : new HttpError(error);
+    const status = normalizedError.response?.status;
+
+    if (status === HttpStatusCode.Unauthorized) {
+      throw new HttpError("Invalid personal access token.");
+    }
+
+    if (status === HttpStatusCode.NotFound) {
+      throw new HttpError(
+        "Invalid Dokploy server URL. The /api endpoint was not found."
+      );
+    }
+
+    if (!normalizedError.response) {
+      throw new HttpError("Unable to connect to server.");
+    }
+
+    throw normalizedError;
+  }
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -86,29 +121,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   authenticateWithPat: async (rawPat: string, serverUrl?: string | null) => {
     const pat = rawPat.trim();
+    const normalizedServer =
+      normalizeServerUrl(serverUrl ?? getServerUrl()) ?? null;
 
     if (!pat) {
       throw new Error("Personal access token is required.");
     }
 
-    try {
-      if (serverUrl) {
-        persistServerUrl(serverUrl);
-      }
+    if (!normalizedServer) {
+      throw new Error("Dokploy server URL is not configured.");
+    }
 
-      const response = await api.get<AuthResponse["user"]>("auth/me", {
-        headers: { Authorization: `Bearer ${pat}` },
-      });
+    try {
+      await validatePatAndServer(pat, normalizedServer);
+      persistServerUrl(normalizedServer);
 
       persistPat(pat);
-      await persistUser(response.data ?? null);
 
       set((state) => ({
         ...state,
         status: "authenticated",
         pat,
-        user: response.data ?? state.user,
       }));
+
+      await get().loadProfile();
     } catch (error: any) {
       await clearStoredAuth();
       throw error instanceof HttpError ? error : new HttpError(error);

@@ -56,3 +56,10 @@ export const getServerHost = (value?: string | null): string | null => {
 
   return normalized.replace(/^https?:\/\//i, "");
 };
+
+export const getApiBaseUrl = (value?: string | null): string | null => {
+  const normalized = normalizeServerUrl(value ?? getServerUrl());
+  if (!normalized) return null;
+
+  return normalized.endsWith("/api") ? normalized : `${normalized}/api`;
+};

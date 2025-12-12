@@ -2,12 +2,12 @@ import { AxiosError, AxiosRequestConfig } from "axios";
 
 import { api } from "@/src/lib/api";
 import { HttpError } from "./http-error";
-import { getServerUrl } from "./pat-storage";
+import { getApiBaseUrl } from "./pat-storage";
 
 const withBaseURL = (
   config?: AxiosRequestConfig<any>
 ): AxiosRequestConfig<any> => {
-  const baseURL = getServerUrl();
+  const baseURL = getApiBaseUrl(config?.baseURL);
 
   if (!baseURL) {
     throw new AxiosError("Dokploy server URL is not configured.");
