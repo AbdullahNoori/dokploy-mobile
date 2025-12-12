@@ -2,12 +2,12 @@ import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 import { getRequest } from "@/src/lib/http";
-import { StyleSheet } from "@/src/styles/unistyles";
 import { useAuthStore } from "@/src/store/auth";
+import { StyleSheet } from "@/src/styles/unistyles";
 
 export default function TabOneScreen() {
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  // const logout = useAuthStore((state) => state.logout);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -83,7 +83,7 @@ export default function TabOneScreen() {
                 <Text style={styles.primaryButtonText}>Fetch projects</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton} onPress={logout}>
+            <TouchableOpacity style={styles.secondaryButton}>
               <Text style={styles.secondaryButtonText}>Sign out</Text>
             </TouchableOpacity>
           </View>
@@ -131,13 +131,13 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: theme.font.xl4,
     fontFamily: theme.families.inter,
     color: theme.colors.text,
-    fontWeight: "700",
+    fontWeight: theme.font.semiBold,
   },
   subtitle: {
     textAlign: "center",
     color: theme.colors.muted,
     fontSize: theme.font.base,
-    fontFamily: theme.families.inter,
+    fontFamily: theme.families.mono,
     lineHeight: theme.font.base * 1.5,
     maxWidth: 420,
   },

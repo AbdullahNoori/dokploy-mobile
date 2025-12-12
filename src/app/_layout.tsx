@@ -1,50 +1,45 @@
 import "../styles/unistyles";
 
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { useEffect, useMemo } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SWRConfig } from "swr";
 
 import { loadStoredTheme, ThemeName } from "@/src/hooks/theme";
-import { AuthStatus, useAuthStore } from "@/src/store/auth";
 import { navDarkTheme, navLightTheme } from "@/src/styles/nav-theme";
 import { UnistylesRuntime, useUnistyles } from "react-native-unistyles";
+import { AppWrapper } from "./AppWrapper";
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from "expo-router";
+export { ErrorBoundary } from "expo-router";
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: "index",
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({
+  fade: true,
+  duration: 680,
+});
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    // inter: require("../assets/fonts/Inter"),
+  const [fontsLoaded, fontError] = useFonts({
+    Inter: require("../assets/fonts/Inter.ttf"),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
 
-  const { rt } = useUnistyles(); // subscribe to theme changes
-  const navTheme =
-    (rt.themeName ?? "light") === "dark" ? navDarkTheme : navLightTheme;
-  const status = useAuthStore((state) => state.status);
-  const initializeAuth = useAuthStore((state) => state.initialize);
+  const { rt } = useUnistyles();
+  const navigationTheme = useMemo(
+    () => ((rt.themeName ?? "light") === "dark" ? navDarkTheme : navLightTheme),
+    [rt.themeName]
+  );
 
-  console.log("curr theme :", UnistylesRuntime.themeName);
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+    if (fontError) throw fontError;
+  }, [fontError]);
 
   useEffect(() => {
     const restoreTheme = async () => {
@@ -57,55 +52,21 @@ export default function RootLayout() {
     restoreTheme();
   }, []);
 
-  useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
+  if (!fontsLoaded) {
     return null;
   }
 
   return (
-    <ThemeProvider value={navTheme}>
-      <RootLayoutNav status={status} />
-    </ThemeProvider>
-  );
-}
-
-function RootLayoutNav({ status }: { status: AuthStatus }) {
-  const { theme } = useUnistyles();
-
-  if (status === "checking") {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: theme.colors.background,
-        }}
-      >
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
-  return (
-    <Stack>
-      <Stack.Protected guard={status !== "authenticated"}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-      </Stack.Protected>
-
-      <Stack.Protected guard={status === "authenticated"}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-      </Stack.Protected>
-    </Stack>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider value={navigationTheme}>
+          <BottomSheetModalProvider>
+            <SWRConfig value={{ provider: () => new Map() }}>
+              <AppWrapper />
+            </SWRConfig>
+          </BottomSheetModalProvider>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

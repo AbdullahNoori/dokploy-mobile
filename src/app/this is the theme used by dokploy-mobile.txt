@@ -1,4 +1,4 @@
-this is the theme used by dokploy-mobile, change mine to this pls ``` @tailwind base;
+this is the theme used by dokploy web, change mine to this pls ``` @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
