@@ -38,7 +38,7 @@ import { StyleSheet } from 'react-native-unistyles'
 const styles = StyleSheet.create(theme => ({
   container: {
     backgroundColor: theme.colors.background,
-    padding: theme.spacing(4),
+    padding: theme.size[16],
   },
   title: {
     color: theme.colors.text,
@@ -53,8 +53,8 @@ const styles = StyleSheet.create(theme => ({
         secondary: { backgroundColor: theme.colors.secondary },
       },
       size: {
-        sm: { padding: theme.spacing(2) },
-        md: { padding: theme.spacing(3) },
+        sm: { padding: theme.size[8] },
+        md: { padding: theme.size[12] },
       },
     },
   },
@@ -126,7 +126,7 @@ const baseTheme = {
 
 ## 7) Tokens and helpers
 
-- Spacing: `theme.spacing(n)` multiplies a base unit (here, 4).
+- Spacing: use `theme.size[token]` (e.g., `theme.size[16]`) to align with shared spacing tokens.
 - Typography: `theme.typography` exposes sizes (`display`, `h1`, `h2`, `h3`, `body`, `bodySmall`, `caption`, `micro`). For raw sizes/weights, see `styles/font.ts`.
 - Colors: `theme.colors` provides semantic and Tailwind-like tokens; reuse instead of hard-coding values.
 - Shadows: `theme.shadows` includes light/dark presets.

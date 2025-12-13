@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
+import { authenticateWithPat } from "@/src/api/auth";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/input";
 import { HttpError } from "@/src/lib/http-error";
@@ -26,8 +27,8 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export default function LoginScreen() {
-  const authenticateWithPat = useAuthStore(
-    (state) => state.authenticateWithPat
+  const setAuthFromResponse = useAuthStore(
+    (state) => state.setAuthFromResponse
   );
 
   const [serverUrl, setServerUrl] = useState(() => getServerUrl() ?? "");
@@ -76,7 +77,8 @@ export default function LoginScreen() {
 
     try {
       setServerUrl(normalizedServer);
-      await authenticateWithPat(token, normalizedServer);
+      const response = await authenticateWithPat(token, normalizedServer);
+      await setAuthFromResponse(response);
     } catch (err: any) {
       const message =
         err instanceof HttpError ? err.message : err?.message ?? null;
@@ -87,7 +89,7 @@ export default function LoginScreen() {
     } finally {
       setSubmitting(false);
     }
-  }, [authenticateWithPat, pat, serverUrl]);
+  }, [pat, serverUrl, setAuthFromResponse]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>

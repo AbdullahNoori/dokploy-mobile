@@ -1,21 +1,23 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
+import { Button } from "@/src/components/ui/Button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/Dialog";
 import { getRequest } from "@/src/lib/http";
-import { useAuthStore } from "@/src/store/auth";
 import { StyleSheet } from "@/src/styles/unistyles";
 
 export default function TabOneScreen() {
-  const user = useAuthStore((state) => state.user);
-  // const logout = useAuthStore((state) => state.logout);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-
-  const greeting = useMemo(() => {
-    if (user?.first_name) return `Welcome back, ${user.first_name}`;
-    if (user?.full_name) return `Welcome back, ${user.full_name}`;
-    return "You’re signed in";
-  }, [user?.first_name, user?.full_name]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const greeting = "You’re signed in";
 
   const handleFetchProjects = useCallback(async () => {
     setLoading(true);
@@ -86,12 +88,41 @@ export default function TabOneScreen() {
             <TouchableOpacity style={styles.secondaryButton}>
               <Text style={styles.secondaryButtonText}>Sign out</Text>
             </TouchableOpacity>
+            <Button
+              variant="outline"
+              size="default"
+              onPress={() => setDialogOpen(true)}
+            >
+              Login
+            </Button>
           </View>
           {statusMessage ? (
             <Text style={styles.statusText}>{statusMessage}</Text>
           ) : null}
         </View>
       </View>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Welcome back</DialogTitle>
+            <DialogDescription>
+              Use the dashboard buttons to fetch projects or manage your
+              session.
+            </DialogDescription>
+          </DialogHeader>
+          <View style={styles.dialogBody}>
+            <Text style={styles.dialogCopy}>
+              This dialog is triggered from the Login button. Replace this copy
+              with any quick actions or guidance you need.
+            </Text>
+          </View>
+          <DialogFooter>
+            <Button variant="secondary" onPress={() => setDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </View>
   );
 }
@@ -225,5 +256,34 @@ const styles = StyleSheet.create((theme) => ({
     color: theme.colors.muted,
     fontFamily: theme.families.inter,
     fontSize: theme.font.sm,
+  },
+  showcaseCard: {
+    gap: theme.spacing(1.5),
+  },
+  sectionLabel: {
+    fontFamily: theme.families.inter,
+    fontSize: theme.font.sm,
+    fontWeight: "700",
+    color: theme.colors.muted,
+    letterSpacing: 0.5,
+  },
+  buttonGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing(1),
+  },
+  buttonCell: {
+    flexBasis: "48%",
+    flexGrow: 1,
+  },
+  dialogBody: {
+    paddingHorizontal: theme.size[24],
+    paddingBottom: theme.size[24],
+  },
+  dialogCopy: {
+    color: theme.colors.text,
+    fontFamily: theme.families.inter,
+    fontSize: theme.font.base,
+    lineHeight: theme.font.base * 1.5,
   },
 }));
