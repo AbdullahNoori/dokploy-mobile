@@ -56,7 +56,7 @@ export default function TabLayout() {
               <HugeiconsIcon icon={Folder01Icon} size={size} color={color} />
             ),
             headerRight: () => (
-              <Link href="/modal" asChild>
+              <Link href="/dokploy" asChild>
                 <Pressable>
                   {({ pressed }) => (
                     <FontAwesome
@@ -92,9 +92,7 @@ export default function TabLayout() {
           name="two"
           options={{
             title: "Tab Two",
-            tabBarIcon: ({ color }) => (
-              <TabBarIcon name="code" color={color} />
-            ),
+            tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
           }}
         />
       </Tabs.Protected>

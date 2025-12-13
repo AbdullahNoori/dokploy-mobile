@@ -15,7 +15,7 @@ import { SWRConfig } from "swr";
 import { loadStoredTheme, ThemeName } from "@/src/hooks/theme";
 import { navDarkTheme, navLightTheme } from "@/src/styles/nav-theme";
 import { UnistylesRuntime, useUnistyles } from "react-native-unistyles";
-import { AppWrapper } from "./AppWrapper";
+import AppWrapper from "./AppWrapper";
 
 export { ErrorBoundary } from "expo-router";
 

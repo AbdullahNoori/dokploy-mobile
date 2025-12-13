@@ -1,6 +1,6 @@
 {
   "name": "dokploy-mobile",
-  "main": "expo-router/entry",
+  "main": "./src/entry.tsx",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",

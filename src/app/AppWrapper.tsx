@@ -3,10 +3,11 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 
 import { useAuthStore } from "@/src/store/auth";
+import { Platform } from "react-native";
 
 const protectedGroups = new Set(["(tabs)", "(protected)", "(modals)"]);
 
-export function AppWrapper() {
+export default function AppWrapper() {
   const status = useAuthStore((state) => state.status);
   const initialize = useAuthStore((state) => state.initialize);
   const router = useRouter();
@@ -58,7 +59,11 @@ export function AppWrapper() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="(modals)"
-          options={{ presentation: "modal", animation: "slide_from_bottom" }}
+          options={{
+            presentation: "modal",
+            animation: Platform.OS === "ios" ? "slide_from_bottom" : "fade",
+            headerShown: false,
+          }}
         />
       </Stack.Protected>
 
