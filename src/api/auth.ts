@@ -12,7 +12,7 @@ const validatePatAndServer = async (pat: string, serverUrl: string) => {
   try {
     await fetchProjects({
       baseURL: serverUrl,
-      headers: { " x-api-key": `${pat}` },
+      headers: { "x-api-key": pat },
     });
   } catch (error: any) {
     const normalizedError =

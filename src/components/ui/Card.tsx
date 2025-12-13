@@ -62,7 +62,7 @@ const styles = StyleSheet.create((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.size[16],
-    shadowColor: theme.shadows.color,
+    shadowColor: theme.shadows.shadow,
     shadowOpacity: theme.shadows.opacity,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 6 },

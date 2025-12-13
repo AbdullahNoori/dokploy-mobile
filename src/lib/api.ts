@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosHeaders } from "axios";
 
 import {
   PAT_STORAGE_KEY,
@@ -14,7 +14,6 @@ export const api = axios.create({
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
-    "x-api-key": API_KEY,
   },
 });
 
@@ -29,11 +28,25 @@ api.interceptors.request.use((config) => {
 
   config.baseURL = baseURL;
 
-  const pat = patStorage.getString(PAT_STORAGE_KEY);
-  if (pat && !(config.headers as any)?.Authorization) {
-    config.headers = config.headers ?? {};
-    (config.headers as any).Authorization = `Bearer ${pat}`;
+  const headers =
+    config.headers instanceof AxiosHeaders
+      ? config.headers
+      : new AxiosHeaders(config.headers ?? {});
+  const storedPat = patStorage.getString(PAT_STORAGE_KEY);
+  const existingApiKey =
+    headers.get("x-api-key") ??
+    headers.get("X-API-KEY") ??
+    headers.get("X-Api-Key");
+  const apiKey = existingApiKey ?? storedPat ?? API_KEY;
+
+  if (apiKey) {
+    headers.set("x-api-key", apiKey);
   }
+
+  headers.delete("Authorization");
+  headers.delete("authorization");
+
+  config.headers = headers;
 
   return config;
 });

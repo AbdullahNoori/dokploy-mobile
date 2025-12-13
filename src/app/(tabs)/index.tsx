@@ -1,289 +1,550 @@
-import { useCallback, useState } from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
-
-import { Button } from "@/src/components/ui/Button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/src/components/ui/Dialog";
-import { getRequest } from "@/src/lib/http";
+  AlertCircleIcon,
+  Book02Icon,
+  Folder01Icon,
+  MoreHorizontalIcon,
+  Refresh01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { useCallback, useMemo } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  View,
+} from "react-native";
+import useSWR from "swr";
+
+import { fetchProjects, Project, ProjectsResponse } from "@/src/api/dashboard";
+import { Button } from "@/src/components/ui/Button";
+import { Card, CardContent, CardHeader } from "@/src/components/ui/Card";
+import { Skeleton } from "@/src/components/ui/Skeleton";
+import { Heading, Text, Title } from "@/src/components/ui/Text";
 import { StyleSheet } from "@/src/styles/unistyles";
+import { useUnistyles } from "react-native-unistyles";
 
-export default function TabOneScreen() {
-  const [loading, setLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const greeting = "You’re signed in";
+const normalizeProjects = (
+  payload: ProjectsResponse | undefined
+): Project[] => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.projects)) return payload.projects;
+  return [];
+};
 
-  const handleFetchProjects = useCallback(async () => {
-    setLoading(true);
-    setStatusMessage(null);
-    try {
-      const result = await getRequest<any>("project.all");
-      const projects =
-        (Array.isArray(result) && result) ||
-        (Array.isArray(result?.projects) ? result.projects : null);
-      const total = projects?.length ?? null;
-
-      setStatusMessage(
-        typeof total === "number"
-          ? `Token works — fetched ${total} project${total === 1 ? "" : "s"}.`
-          : "Token works — fetched projects successfully."
-      );
-    } catch (error: any) {
-      setStatusMessage(
-        error?.message ??
-          "Could not reach your Dokploy instance. Check your PAT or network."
-      );
-    } finally {
-      setLoading(false);
+const getProjectDescription = (project: Project) => {
+  const description = (project as Record<string, unknown>).description;
+  if (typeof description === "string") {
+    const trimmed = description.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
     }
-  }, []);
+  }
+
+  return "";
+};
+
+const formatProjectId = (id: string) =>
+  id.length > 16 ? `${id.slice(0, 8)}...${id.slice(-4)}` : id;
+
+const formatCreatedLabel = (project: Project) => {
+  const createdAt =
+    (project as Record<string, unknown>).createdAt ??
+    (project as Record<string, unknown>).created_at ??
+    (project as Record<string, unknown>).created;
+
+  if (typeof createdAt !== "string") {
+    return "Created date unknown";
+  }
+
+  const createdDate = new Date(createdAt);
+  const now = Date.now();
+  const isValid = !Number.isNaN(createdDate.getTime());
+
+  if (!isValid) {
+    return "Created date unknown";
+  }
+
+  const diffMs = Math.max(0, now - createdDate.getTime());
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Created today";
+  if (diffDays === 1) return "Created 1 day ago";
+
+  return `Created ${diffDays} days ago`;
+};
+
+const getServicesCount = (project: Project) => {
+  const environments = (project as Record<string, unknown>).environments;
+
+  if (!Array.isArray(environments)) return 0;
+
+  const toLength = (value: unknown) =>
+    Array.isArray(value) ? value.length : 0;
+
+  return environments
+    .map((env) => {
+      const record = env as Record<string, unknown>;
+
+      return (
+        toLength(record.mariadb) +
+        toLength(record.mongo) +
+        toLength(record.mysql) +
+        toLength(record.postgres) +
+        toLength(record.redis) +
+        toLength(record.applications) +
+        toLength(record.compose)
+      );
+    })
+    .reduce((acc, curr) => acc + curr, 0);
+};
+
+type ProjectsStateProps = {
+  variant: "error" | "empty";
+  message: string;
+  onAction: () => void;
+};
+
+const ProjectsState = ({ variant, message, onAction }: ProjectsStateProps) => {
+  const { theme } = useUnistyles();
+
+  const isError = variant === "error";
+  const iconColor = isError ? theme.colors.destructive : theme.colors.primary;
 
   return (
-    <View style={[styles.screen, styles.contentContainer]}>
-      <View style={styles.hero}>
-        <Text style={styles.kicker}>Dashboard</Text>
-        <Text style={styles.title}>{greeting}</Text>
-        <Text style={styles.subtitle}>
-          Use your personal access token to fetch data from your Dokploy
-          instance. Start by pulling projects to confirm the connection.
-        </Text>
+    <View
+      style={[styles.stateCard, isError ? styles.errorCard : styles.emptyCard]}
+    >
+      <View style={[styles.stateIcon, isError && styles.stateIconError]}>
+        <HugeiconsIcon
+          icon={isError ? AlertCircleIcon : Folder01Icon}
+          size={theme.size[28]}
+          color={iconColor}
+        />
       </View>
+      <Heading variant="h3" style={styles.stateTitle}>
+        {isError ? "Unable to load projects" : "No projects found"}
+      </Heading>
+      <Text style={[styles.stateMessage, isError && styles.errorText]}>
+        {message}
+      </Text>
+      <Button
+        variant={isError ? "destructive" : "outline"}
+        size="default"
+        onPress={onAction}
+        label={isError ? "Try again" : "Reload"}
+      />
+    </View>
+  );
+};
 
-      <View style={styles.cardWrapper}>
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Connection check</Text>
-            {loading ? (
-              <ActivityIndicator />
-            ) : statusMessage ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Updated</Text>
+const ProjectsSkeleton = ({ count = 3 }: { count?: number }) => {
+  const { theme } = useUnistyles();
+
+  return (
+    <View style={styles.skeletonStack}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Card key={`project-skeleton-${index}`} style={styles.projectCard}>
+          <CardHeader style={styles.cardHeader}>
+            <View style={styles.projectHeader}>
+              <Skeleton
+                width={theme.size[40]}
+                height={theme.size[40]}
+                radius={theme.radius.full}
+              />
+              <View style={styles.projectText}>
+                <Skeleton width="70%" height={theme.size[16]} />
+                <Skeleton width="45%" height={theme.size[12]} />
               </View>
-            ) : null}
-          </View>
-          <Text style={styles.cardCopy}>
-            We&apos;ll call `project.all` with your stored PAT.
-          </Text>
-          <View style={styles.actions}>
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                loading ? styles.primaryButtonDisabled : null,
-              ]}
-              onPress={handleFetchProjects}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Fetch projects</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>Sign out</Text>
-            </TouchableOpacity>
-            <Button
-              variant="outline"
-              size="default"
-              onPress={() => setDialogOpen(true)}
-            >
-              Login
-            </Button>
-          </View>
-          {statusMessage ? (
-            <Text style={styles.statusText}>{statusMessage}</Text>
-          ) : null}
-        </View>
-      </View>
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Welcome back</DialogTitle>
-            <DialogDescription>
-              Use the dashboard buttons to fetch projects or manage your
-              session.
-            </DialogDescription>
-          </DialogHeader>
-          <View style={styles.dialogBody}>
-            <Text style={styles.dialogCopy}>
-              This dialog is triggered from the Login button. Replace this copy
-              with any quick actions or guidance you need.
+            </View>
+            <Skeleton width={theme.size[80]} height={theme.size[24]} />
+          </CardHeader>
+          <CardContent style={styles.cardContent}>
+            <Skeleton width="100%" height={theme.size[12]} />
+            <Skeleton width="80%" height={theme.size[12]} />
+          </CardContent>
+        </Card>
+      ))}
+    </View>
+  );
+};
+
+export default function ProjectsScreen() {
+  const { theme } = useUnistyles();
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    "project.all",
+    fetchProjects
+  );
+
+  const projects = useMemo(() => normalizeProjects(data), [data]);
+  const projectCount = projects.length;
+  const isInitialLoading = isLoading && !data;
+  const refreshing = isValidating && !isInitialLoading;
+  const iconSize = 18;
+  const iconColor = theme.colors.primary;
+
+  const handleRefresh = useCallback(() => {
+    mutate();
+  }, [mutate]);
+
+  const renderProject = useCallback(
+    (item: Project, index: number) => {
+      const name = item.name?.toString() || "Untitled project";
+      const projectId = item.id?.toString() || `project-${index}`;
+      const description = getProjectDescription(item);
+      const createdLabel = formatCreatedLabel(item);
+      const servicesLabel = `Services: ${getServicesCount(item)}`;
+
+      return (
+        <Card key={projectId} style={styles.projectCard}>
+          <CardHeader style={styles.cardHeader}>
+            <View style={styles.projectHeader}>
+              <View style={styles.iconBadge}>
+                <HugeiconsIcon
+                  icon={Book02Icon}
+                  size={iconSize}
+                  color={iconColor}
+                />
+              </View>
+              <View style={styles.projectText}>
+                <Title variant="lg" numberOfLines={1}>
+                  {name}
+                </Title>
+                {description ? (
+                  <Text
+                    variant="body2"
+                    numberOfLines={2}
+                    style={styles.mutedText}
+                  >
+                    {description}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+            <View style={styles.menuIcon}>
+              <HugeiconsIcon
+                icon={MoreHorizontalIcon}
+                size={theme.size[20]}
+                color={theme.colors.text}
+              />
+            </View>
+          </CardHeader>
+          <CardContent style={styles.cardContent}>
+            <Text numberOfLines={1} style={styles.projectCopy}>
+              {createdLabel}
             </Text>
+            <View style={styles.pill}>
+              <Text variant="body2" numberOfLines={1} style={styles.pillText}>
+                {servicesLabel}
+              </Text>
+            </View>
+          </CardContent>
+        </Card>
+      );
+    },
+    [iconColor, iconSize]
+  );
+
+  const errorMessage =
+    (error as Error | undefined)?.message ??
+    "Check your Dokploy server URL or PAT, then retry.";
+
+  const headerActionLabel = refreshing ? "Refreshing..." : "Refresh";
+
+  return (
+    <View style={styles.safeArea}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+            progressBackgroundColor={theme.colors.surface}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Heading variant="h2">Projects</Heading>
+            <Text style={[styles.mutedText, styles.subtitle]} variant="body1">
+              Keep your Dokploy projects in sync and ready for deployments.
+            </Text>
+            <View style={styles.headerMeta}>
+              <View style={styles.countBadge}>
+                <Text style={styles.countLabel}>Total</Text>
+                <Text style={styles.countValue}>{projectCount}</Text>
+              </View>
+              <View style={styles.refreshHint}>
+                <HugeiconsIcon
+                  icon={Refresh01Icon}
+                  size={theme.size[16]}
+                  color={theme.colors.muted}
+                />
+                <Text style={styles.mutedText}>Pull to refresh anytime</Text>
+              </View>
+            </View>
           </View>
-          <DialogFooter>
-            <Button variant="secondary" onPress={() => setDialogOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <View style={styles.loaderSlot}>
+            {isValidating ? (
+              <ActivityIndicator
+                size="small"
+                color={theme.colors.primary}
+                accessibilityLabel={headerActionLabel}
+              />
+            ) : (
+              <View style={styles.loaderPlaceholder} />
+            )}
+          </View>
+        </View>
+
+        {error ? (
+          projects.length > 0 ? (
+            <View style={styles.alertCard}>
+              <View style={styles.alertContent}>
+                <View style={[styles.stateIcon, styles.alertIcon]}>
+                  <HugeiconsIcon
+                    icon={AlertCircleIcon}
+                    size={theme.size[20]}
+                    color={theme.colors.destructive}
+                  />
+                </View>
+                <View style={styles.alertText}>
+                  <Title variant="sm">Unable to refresh</Title>
+                  <Text style={[styles.mutedText, styles.errorText]}>
+                    {errorMessage}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <ProjectsState
+              variant="error"
+              message={errorMessage}
+              onAction={handleRefresh}
+            />
+          )
+        ) : null}
+
+        {isInitialLoading ? (
+          <ProjectsSkeleton />
+        ) : projects.length === 0 ? (
+          <ProjectsState
+            variant="empty"
+            message="Your Dokploy workspace does not have projects yet."
+            onAction={handleRefresh}
+          />
+        ) : (
+          <View style={styles.projectsList}>{projects.map(renderProject)}</View>
+        )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  flex: {
-    flex: 1,
-  },
-  screen: {
+  safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  contentContainer: {
+  scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing(4),
-    paddingVertical: theme.spacing(6),
-    alignItems: "center",
-    justifyContent: "center",
-    gap: theme.spacing(3),
+    paddingHorizontal: theme.size[16],
+    paddingTop: theme.size[16],
+    paddingBottom: theme.size[20],
+    gap: theme.size[16],
   },
-  hero: {
-    alignItems: "center",
-    gap: theme.spacing(1.5),
-    marginBottom: theme.spacing(5),
-    width: "100%",
-    maxWidth: 520,
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: theme.size[12],
   },
-  kicker: {
-    fontSize: theme.font.base,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    color: theme.colors.primary,
-    fontFamily: theme.families.inter,
-    fontWeight: "700",
-  },
-  title: {
-    fontSize: theme.font.xl4,
-    fontFamily: theme.families.inter,
-    color: theme.colors.text,
-    fontWeight: theme.font.semiBold,
+  headerText: {
+    flex: 1,
+    gap: theme.size[6],
   },
   subtitle: {
-    textAlign: "center",
-    color: theme.colors.muted,
-    fontSize: theme.font.base,
-    fontFamily: theme.families.mono,
-    lineHeight: theme.font.base * 1.5,
-    maxWidth: 420,
+    lineHeight: theme.font.base * 1.4,
   },
-  cardWrapper: {
-    gap: theme.spacing(2),
-    width: "100%",
-    maxWidth: 520,
+  headerMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.size[12],
+    marginTop: theme.size[4],
   },
-  card: {
-    width: "100%",
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
+  countBadge: {
+    paddingHorizontal: theme.size[10],
+    paddingVertical: theme.size[8],
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.mutedSurface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: theme.spacing(4),
-    gap: theme.spacing(2.5),
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.size[6],
+  },
+  countLabel: {
+    color: theme.colors.muted,
+    fontSize: theme.font.sm,
+    fontFamily: theme.families.inter,
+  },
+  countValue: {
+    color: theme.colors.text,
+    fontSize: theme.font.sm,
+    fontWeight: theme.font.semiBold,
+    fontFamily: theme.families.inter,
+    textAlign: "center",
+  },
+  refreshHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.size[6],
+  },
+  loaderSlot: {
+    width: theme.size[40],
+    height: theme.size[40],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loaderPlaceholder: {
+    width: theme.size[20],
+    height: theme.size[20],
+  },
+  mutedText: {
+    color: theme.colors.muted,
+    fontSize: theme.font.sm,
+    fontFamily: theme.families.inter,
+  },
+  projectsList: {
+    gap: theme.size[12],
+  },
+  projectCard: {
+    gap: theme.size[8],
   },
   cardHeader: {
+    alignItems: "center",
+    marginBottom: 0,
+  },
+  projectHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.size["2"],
+    flex: 1,
+  },
+  iconBadge: {
+    width: theme.size[40],
+    height: theme.size[40],
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.mutedSurface,
+  },
+  projectText: {
+    flex: 1,
+    gap: theme.size[2],
+    justifyContent: "flex-end",
+  },
+  pill: {
+    paddingHorizontal: theme.size[12],
+    paddingVertical: theme.size[6],
+    alignSelf: "flex-end",
+  },
+  pillText: {
+    color: theme.colors.text,
+    fontSize: theme.font.sm,
+    fontWeight: theme.font.medium,
+    fontFamily: theme.families.inter,
+  },
+  cardContent: {
+    gap: theme.size[6],
+    marginTop: theme.size["6"],
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  cardTitle: {
-    fontFamily: theme.families.inter,
-    fontWeight: "700",
-    fontSize: theme.font.lg,
-    color: theme.colors.text,
+  menuIcon: {
+    width: theme.size[32],
+    height: theme.size[32],
+    borderRadius: theme.radius.full,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  cardCopy: {
+  projectCopy: {
     color: theme.colors.muted,
+    fontSize: theme.font.sm,
+    lineHeight: theme.font.base * 1.4,
     fontFamily: theme.families.inter,
+    flex: 1,
+  },
+  skeletonStack: {
+    flex: 1,
+    gap: theme.size[12],
+  },
+  stateCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.size[12],
+    paddingHorizontal: theme.size[16],
+    paddingVertical: theme.size[24],
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl2,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  emptyCard: {},
+  errorCard: {
+    borderColor: theme.colors.destructive,
+  },
+  stateIcon: {
+    width: theme.size[56],
+    height: theme.size[56],
+    borderRadius: theme.radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.mutedSurface,
+  },
+  stateIconError: {
+    borderColor: theme.colors.destructive,
+  },
+  stateTitle: {
+    textAlign: "center",
+  },
+  stateMessage: {
+    textAlign: "center",
     fontSize: theme.font.base,
     lineHeight: theme.font.base * 1.4,
+    color: theme.colors.muted,
+    fontFamily: theme.families.inter,
   },
-  badge: {
-    paddingHorizontal: theme.spacing(2),
-    paddingVertical: theme.spacing(0.75),
+  errorText: {
+    color: theme.colors.destructive,
+  },
+  alertCard: {
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.destructive,
     backgroundColor: theme.colors.mutedSurface,
+    padding: theme.size[12],
+  },
+  alertContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.size[10],
+  },
+  alertIcon: {
+    width: theme.size[32],
+    height: theme.size[32],
     borderRadius: theme.radius.full,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.destructive,
+    backgroundColor: theme.colors.background,
   },
-  badgeText: {
-    color: theme.colors.muted,
-    fontSize: theme.font.xs,
-    fontFamily: theme.families.inter,
-    letterSpacing: 0.4,
-  },
-  actions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing(2),
-  },
-  primaryButton: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing(2.75),
-    paddingHorizontal: theme.spacing(4),
-    borderRadius: theme.radius.lg,
+  alertText: {
     flex: 1,
-    alignItems: "center",
-  },
-  primaryButtonDisabled: {
-    opacity: 0.7,
-  },
-  primaryButtonText: {
-    color: theme.colors.primaryForeground,
-    fontFamily: theme.families.inter,
-    fontWeight: "700",
-    fontSize: theme.font.md,
-  },
-  secondaryButton: {
-    paddingVertical: theme.spacing(2.5),
-    paddingHorizontal: theme.spacing(4),
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  secondaryButtonText: {
-    color: theme.colors.text,
-    fontFamily: theme.families.inter,
-    fontWeight: "600",
-    fontSize: theme.font.md,
-  },
-  statusText: {
-    color: theme.colors.muted,
-    fontFamily: theme.families.inter,
-    fontSize: theme.font.sm,
-  },
-  showcaseCard: {
-    gap: theme.spacing(1.5),
-  },
-  sectionLabel: {
-    fontFamily: theme.families.inter,
-    fontSize: theme.font.sm,
-    fontWeight: "700",
-    color: theme.colors.muted,
-    letterSpacing: 0.5,
-  },
-  buttonGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing(1),
-  },
-  buttonCell: {
-    flexBasis: "48%",
-    flexGrow: 1,
-  },
-  dialogBody: {
-    paddingHorizontal: theme.size[24],
-    paddingBottom: theme.size[24],
-  },
-  dialogCopy: {
-    color: theme.colors.text,
-    fontFamily: theme.families.inter,
-    fontSize: theme.font.base,
-    lineHeight: theme.font.base * 1.5,
+    gap: theme.size[2],
   },
 }));
