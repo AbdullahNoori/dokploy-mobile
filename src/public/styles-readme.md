@@ -8,18 +8,18 @@ This guide summarizes the key steps from `public/unistyles-full.md` to get you p
 - Register themes and breakpoints, and enable adaptive settings:
 
 ```ts
-import { StyleSheet } from 'react-native-unistyles'
-import { appThemes, breakpoints } from './unistyles'
+import { StyleSheet } from "react-native-unistyles";
+import { appThemes, breakpoints } from "./unistyles";
 
 StyleSheet.configure({
   themes: appThemes,
   breakpoints,
   settings: {
-    adaptiveThemes: true,        // auto-use system theme
-    CSSVars: true,               // export vars for web
-    nativeBreakpointsMode: 'pixels',
+    adaptiveThemes: true, // auto-use system theme
+    CSSVars: true, // export vars for web
+    nativeBreakpointsMode: "pixels",
   },
-})
+});
 ```
 
 ## 2) Define themes
@@ -30,21 +30,16 @@ StyleSheet.configure({
 
 ## 3) Use StyleSheet with theme + variants
 
-- Create styles with a theme-aware factory:
+- Create styles with a theme-aware factory and prefer shared primitives (e.g., `Text`, `Title`, `Heading` from `src/components/ui/Text.tsx`) for typography:
 
 ```ts
-import { StyleSheet } from 'react-native-unistyles'
+import { StyleSheet } from "react-native-unistyles";
+import { Text, Title } from "@/src/components/ui/Text";
 
-const styles = StyleSheet.create(theme => ({
+const styles = StyleSheet.create((theme) => ({
   container: {
     backgroundColor: theme.colors.background,
     padding: theme.size[16],
-  },
-  title: {
-    color: theme.colors.text,
-    fontFamily: theme.fonts.sans,
-    fontSize: theme.typography.h2,
-    fontWeight: '600',
   },
   button: {
     variants: {
@@ -58,7 +53,14 @@ const styles = StyleSheet.create(theme => ({
       },
     },
   },
-}))
+}));
+
+const Example = () => (
+  <View style={styles.container}>
+    <Title variant="lg">Hello</Title>
+    <Text variant="body2">Using the shared text primitives keeps sizes/colors consistent.</Text>
+  </View>
+);
 ```
 
 - Apply variants directly: `styles.button({ tone: 'primary', size: 'md' })`.
@@ -69,10 +71,10 @@ const styles = StyleSheet.create(theme => ({
 - Use `UnistylesRuntime` to read or set the active theme:
 
 ```ts
-import { UnistylesRuntime } from 'react-native-unistyles'
+import { UnistylesRuntime } from "react-native-unistyles";
 
-const current = UnistylesRuntime.theme // 'light' | 'dark'
-UnistylesRuntime.setTheme('dark')      // switch manually
+const current = UnistylesRuntime.theme; // 'light' | 'dark'
+UnistylesRuntime.setTheme("dark"); // switch manually
 ```
 
 - If `adaptiveThemes` is true, the theme follows the OS. To lock a theme, set `settings.initialTheme` and disable `adaptiveThemes` in `StyleSheet.configure`.
@@ -101,13 +103,13 @@ import { Display, Hide, mq } from 'react-native-unistyles'
 - Load them in your root layout using `useFonts` (Expo pattern from the doc):
 
 ```ts
-import { useFonts } from 'expo-font'
+import { useFonts } from "expo-font";
 
 const [loaded] = useFonts({
-  JetBrainsMono: require('../assets/fonts/JetBrainsMono-Regular.ttf'),
-  JetBrainsMonoBold: require('../assets/fonts/JetBrainsMono-Bold.ttf'),
-})
-if (!loaded) return null
+  JetBrainsMono: require("../assets/fonts/JetBrainsMono-Regular.ttf"),
+  JetBrainsMonoBold: require("../assets/fonts/JetBrainsMono-Bold.ttf"),
+});
+if (!loaded) return null;
 ```
 
 - Point your theme tokens to the loaded names in `styles/unistyles.ts`:
@@ -115,18 +117,18 @@ if (!loaded) return null
 ```ts
 const baseTheme = {
   fonts: {
-    sans: 'Inter',
-    serif: 'Lora',
-    mono: 'JetBrainsMono',
+    sans: "Inter",
+    serif: "Lora",
+    mono: "JetBrainsMono",
   },
-}
+};
 ```
 
 - Use `fontFamily: theme.fonts.mono` (or `sans`/`serif`) in styles and variants.
 
 ## 7) Tokens and helpers
 
-- Spacing: use `theme.size[token]` (e.g., `theme.size[16]`) to align with shared spacing tokens.
+- Spacing: use `theme.size[token]` (e.g., `theme.size['16']`) to align with shared spacing tokens.
 - Typography: `theme.typography` exposes sizes (`display`, `h1`, `h2`, `h3`, `body`, `bodySmall`, `caption`, `micro`). For raw sizes/weights, see `styles/font.ts`.
 - Colors: `theme.colors` provides semantic and Tailwind-like tokens; reuse instead of hard-coding values.
 - Shadows: `theme.shadows` includes light/dark presets.
@@ -136,12 +138,12 @@ const baseTheme = {
 - Text component with theme + variants:
 
 ```ts
-const textStyles = StyleSheet.create(theme => ({
+const textStyles = StyleSheet.create((theme) => ({
   base: {
     color: theme.colors.text,
     fontFamily: theme.fonts.sans,
     fontSize: theme.typography.body,
-    fontWeight: '400',
+    fontWeight: "400",
   },
   variant: {
     variants: {
@@ -150,21 +152,21 @@ const textStyles = StyleSheet.create(theme => ({
         accent: { color: theme.colors.primary },
       },
       weight: {
-        regular: { fontWeight: '400' },
-        bold: { fontWeight: '700' },
+        regular: { fontWeight: "400" },
+        bold: { fontWeight: "700" },
       },
     },
   },
-}))
+}));
 ```
 
 - Theme toggle example (hook or button action):
 
 ```ts
 const toggleTheme = () => {
-  const next = UnistylesRuntime.theme === 'light' ? 'dark' : 'light'
-  UnistylesRuntime.setTheme(next)
-}
+  const next = UnistylesRuntime.theme === "light" ? "dark" : "light";
+  UnistylesRuntime.setTheme(next);
+};
 ```
 
 ## 9) Mental model
