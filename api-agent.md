@@ -11,7 +11,7 @@ Authoritative prompt for generating, maintaining, and updating the API layer of 
 
 ## Core Files & Stack (do not rewrite)
 
-- `src/lib/pat-storage.ts`: MMKV storage, helpers `getApiBaseUrl`, `getServerUrl`, `PAT_STORAGE_KEY` (`@dokploy/pat`). Always rely on these to resolve the backend URL.
+- `src/lib/pat-storage.ts`: MMKV storage, helpers `normalizeServerUrl`, `getServerUrl`, `PAT_STORAGE_KEY` (`@dokploy/pat`). Always rely on these to resolve the backend URL.
 - `src/lib/api.ts`: Axios instance. Request interceptor injects `Authorization: Bearer <PAT>` from MMKV and keeps `x-api-key`. Do not bypass or duplicate this logic.
 - `src/lib/http.ts`: Thin wrappers `getRequest`, `postRequest`, `putRequest`, `patchRequest`, `deleteRequest`. All network I/O must flow through these helpers so base URL resolution and error wrapping stay centralized.
 - `src/lib/http-error.ts`: Unified HttpError wrapper. Every thrown error must be an HttpError. Network failures become `new HttpError("Network request failed")`. Zod validation failures must throw `new HttpError({ code: "validation", message: "Response validation failed", status: 0, details: parsed.error })`.
@@ -36,7 +36,7 @@ Authoritative prompt for generating, maintaining, and updating the API layer of 
 - Dokploy uses **only PAT authentication**.
 - Always attach `Authorization: Bearer <PAT>`; the request interceptor handles this—do not manually pass tokens to request functions.
 - PAT is stored in MMKV under `PAT_STORAGE_KEY`. No refresh tokens, no token parsing, no access_token/refresh_token objects.
-- Always resolve the backend URL with `getApiBaseUrl()`. Never hardcode hosts or protocols.
+- Always resolve the backend URL with the pat-storage helpers (`normalizeServerUrl` + `getServerUrl`). Never hardcode hosts or protocols.
 
 ## TypeScript & Zod Rules
 

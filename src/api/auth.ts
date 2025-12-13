@@ -1,91 +1,60 @@
-import { postRequest } from "../lib/http";
+import { HttpStatusCode } from "axios";
 
-export type AuthUser = {
-  id: string;
-  email: string;
-  full_name: string;
-  first_name?: string;
-  last_name?: string;
-  is_active: boolean;
-  is_verified: boolean;
-  email_verified_from_provider: boolean;
-  oauth_provider?: string;
-  profile_picture?: string | null;
-  created_at?: string;
-  last_login_at?: string;
-  roles: string[];
+import { HttpError } from "../lib/http-error";
+import {
+  getServerUrl,
+  normalizeServerUrl,
+  persistServerUrl,
+} from "../lib/pat-storage";
+import { fetchProjects } from "./dashboard";
+
+const validatePatAndServer = async (pat: string, serverUrl: string) => {
+  try {
+    await fetchProjects({
+      baseURL: serverUrl,
+      headers: { " x-api-key": `${pat}` },
+    });
+  } catch (error: any) {
+    const normalizedError =
+      error instanceof HttpError ? error : new HttpError(error);
+    const status = normalizedError.response?.status;
+
+    if (status === HttpStatusCode.Unauthorized) {
+      throw new HttpError("Invalid personal access token.");
+    }
+
+    if (status === HttpStatusCode.NotFound) {
+      throw new HttpError(
+        "Invalid Dokploy server URL. The endpoint was not found."
+      );
+    }
+
+    if (!normalizedError.response) {
+      throw new HttpError("Unable to connect to server.");
+    }
+
+    throw normalizedError;
+  }
 };
 
-export type AuthResponse = {
-  token: string;
-  user?: AuthUser;
-};
+export async function authenticateWithPat(
+  rawPat: string,
+  serverUrl?: string | null
+): Promise<any> {
+  const pat = rawPat.trim();
+  const normalizedServer =
+    normalizeServerUrl(serverUrl ?? getServerUrl()) ?? null;
 
-export type LoginPayload = {
-  email: string;
-  password: string;
-  fingerprint?: Record<string, unknown>;
-};
+  if (!pat) {
+    throw new Error("Personal access token is required.");
+  }
 
-export function login(payload: LoginPayload) {
-  return postRequest<AuthResponse>("auth/login", payload);
-}
+  if (!normalizedServer) {
+    throw new Error("Dokploy server URL is not configured.");
+  }
 
-export type SignupPayload = {
-  email: string;
-  full_name: string;
-  password: string;
-  fingerprint?: Record<string, unknown>;
-};
+  await validatePatAndServer(pat, normalizedServer);
+  persistServerUrl(normalizedServer);
 
-export function signup(payload: SignupPayload) {
-  return postRequest<AuthResponse>("auth/signup", payload);
-}
-
-export type VerifyEmailPayload = {
-  email: string;
-  otp: string;
-};
-
-export function verifyEmail(payload: VerifyEmailPayload) {
-  return postRequest<AuthResponse>("auth/verify-email", payload);
-}
-
-export type ResendVerificationPayload = {
-  email: string;
-};
-
-export function resendVerification(payload: ResendVerificationPayload) {
-  return postRequest<{ message?: string }>(
-    "auth/resend-verification",
-    payload
-  );
-}
-
-export type InitiateResetPasswordPayload = {
-  email: string;
-};
-
-export function initiateResetPassword(payload: InitiateResetPasswordPayload) {
-  return postRequest<{ message?: string }>(
-    "auth/initiate-reset-password",
-    payload
-  );
-}
-
-export type ConfirmResetPasswordPayload = {
-  email: string;
-  code: string;
-  password: string;
-};
-
-export function confirmResetPassword(payload: ConfirmResetPasswordPayload) {
-  return postRequest<{ message?: string }>(
-    "auth/confirm-reset-password",
-    payload
-  );
-}
-
-export function logout() {
-  return postRequest<void>("auth/logout");
+  return { token: pat };
 }

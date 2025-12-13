@@ -1,5 +1,6 @@
 import "../styles/unistyles";
 
+import "@/src/lib/ReactotronConfig";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { ThemeProvider } from "@react-navigation/native";

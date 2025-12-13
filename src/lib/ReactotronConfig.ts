@@ -32,20 +32,19 @@ const resolveHost = () => {
   return host ?? "localhost";
 };
 
-const reactotron =
-  __DEV__
-    ? Reactotron.setAsyncStorageHandler(AsyncStorage)
-        .configure({
-          name: "Tarkeeb DevTools",
-          host: resolveHost(),
-        })
-        .useReactNative({
-          networking: {
-            ignoreUrls: /symbolicate|generate_204/,
-          },
-        })
-        .connect()
-    : undefined;
+const reactotron = __DEV__
+  ? Reactotron.setAsyncStorageHandler(AsyncStorage)
+      .configure({
+        name: "Tarkeeb DevTools",
+        host: resolveHost(),
+      })
+      .useReactNative({
+        networking: {
+          ignoreUrls: /symbolicate|generate_204/,
+        },
+      })
+      .connect()
+  : undefined;
 
 if (__DEV__ && reactotron) {
   reactotron.clear?.();
@@ -81,11 +80,7 @@ export const reactotronLoggers = {
       preview: formatPreview(payload.method, payload.url),
       value: payload,
     }),
-  apiResponse: (payload: {
-    url?: string;
-    status?: number;
-    data?: unknown;
-  }) =>
+  apiResponse: (payload: { url?: string; status?: number; data?: unknown }) =>
     display({
       name: "API Response",
       preview: `${payload.status ?? ""} ${payload.url ?? ""}`.trim(),
