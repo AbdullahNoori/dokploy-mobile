@@ -1,5 +1,3 @@
-import "../styles/unistyles";
-
 import "@/src/lib/ReactotronConfig";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -13,8 +11,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SWRConfig } from "swr";
 
 import { loadStoredTheme, ThemeName } from "@/src/hooks/theme";
-import { navDarkTheme, navLightTheme } from "@/src/styles/nav-theme";
-import { UnistylesRuntime, useUnistyles } from "react-native-unistyles";
+import { DarkTheme, DefaultTheme, Theme } from "@react-navigation/native";
+import { Uniwind, useCSSVariable, useUniwind } from "uniwind";
 import AppWrapper from "./AppWrapper";
 
 export { ErrorBoundary } from "expo-router";
@@ -32,10 +30,40 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  const { rt } = useUnistyles();
+  const { theme } = useUniwind();
+  const [
+    bg,
+    card,
+    text,
+    border,
+    primary,
+    destructive,
+  ] = useCSSVariable([
+    "--color-background",
+    "--color-card",
+    "--color-foreground",
+    "--color-border",
+    "--color-primary",
+    "--color-destructive",
+  ]);
   const navigationTheme = useMemo(
-    () => ((rt.themeName ?? "light") === "dark" ? navDarkTheme : navLightTheme),
-    [rt.themeName]
+    (): Theme => {
+      const base = theme === "dark" ? DarkTheme : DefaultTheme;
+      return {
+        ...base,
+        dark: theme === "dark",
+        colors: {
+          ...base.colors,
+          primary: (primary as string) || base.colors.primary,
+          background: (bg as string) || base.colors.background,
+          card: (card as string) || base.colors.card,
+          text: (text as string) || base.colors.text,
+          border: (border as string) || base.colors.border,
+          notification: (destructive as string) || base.colors.notification,
+        },
+      };
+    },
+    [bg, border, card, destructive, primary, text, theme]
   );
 
   useEffect(() => {
@@ -47,7 +75,7 @@ export default function RootLayout() {
       const stored = await loadStoredTheme();
       const nextTheme = (stored as ThemeName | null) ?? "light";
 
-      UnistylesRuntime.setTheme(nextTheme);
+      Uniwind.setTheme(nextTheme);
     };
 
     restoreTheme();

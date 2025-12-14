@@ -1,9 +1,11 @@
-import { useUnistyles } from "react-native-unistyles";
+import { useUniwind } from "uniwind";
 
 type AppColorScheme = "light" | "dark" | undefined;
 
 export function useColorScheme(): AppColorScheme {
-  const { rt } = useUnistyles();
+  const { theme } = useUniwind();
 
-  return (rt.themeName as AppColorScheme) ?? undefined;
+  if (theme === "dark") return "dark";
+  if (theme === "light") return "light";
+  return undefined;
 }

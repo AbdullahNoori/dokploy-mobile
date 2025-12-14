@@ -8,7 +8,7 @@ import { useColorScheme } from "@/src/components/useColorScheme";
 import Colors from "@/src/constants/Colors";
 import { persistTheme, ThemeName } from "@/src/hooks/theme";
 import { useAuthStore } from "@/src/store/auth";
-import { UnistylesRuntime, useUnistyles } from "react-native-unistyles";
+import { useCSSVariable, useUniwind, Uniwind } from "uniwind";
 
 import {
   Folder01Icon,
@@ -27,13 +27,14 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { theme } = useUnistyles();
+  const { theme } = useUniwind();
+  const [foregroundColor] = useCSSVariable("--color-foreground");
   const status = useAuthStore((state) => state.status);
   const currentTheme: ThemeName =
-    UnistylesRuntime.themeName === "dark" ? "dark" : "light";
+    theme === "dark" ? "dark" : "light";
   const toggleTheme = React.useCallback(async () => {
     const nextTheme: ThemeName = currentTheme === "light" ? "dark" : "light";
-    UnistylesRuntime.setTheme(nextTheme);
+    Uniwind.setTheme(nextTheme);
     persistTheme(nextTheme);
   }, [currentTheme]);
 
@@ -79,7 +80,10 @@ export default function TabLayout() {
                   <HugeiconsIcon
                     icon={currentTheme === "dark" ? Moon02Icon : Sun01Icon}
                     size={22}
-                    color={theme.colors.text}
+                    color={
+                      (foregroundColor as string | undefined) ??
+                      Colors[colorScheme ?? "light"].text
+                    }
                     style={{ marginRight: 10, opacity: pressed ? 0.5 : 1 }}
                   />
                 )}
