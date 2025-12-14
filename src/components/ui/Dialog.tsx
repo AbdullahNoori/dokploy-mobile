@@ -350,7 +350,7 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.background,
     margin: theme.size[24],
     borderRadius: theme.radius.xl2,
-    width: "90%",
+    width: "95%",
     // maxWidth: theme.size[384],
     shadowColor: theme.shadows.shadow,
     shadowOpacity: theme.shadows.opacity,
