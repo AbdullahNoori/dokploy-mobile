@@ -194,6 +194,7 @@ The mobile app must feel like holding the Dokploy control panel in your hand—*
 ## Performance Rules
 
 - Memoize interactive components with `React.memo` when props are stable. Use `useCallback`/`useMemo` for handlers and derived data in lists.
+- Render repeating UI with `FlatList`; do not use array `.map()` for list UIs.
 - **FlatList:** Provide `keyExtractor`, `getItemLayout` when possible using `theme.size` heights, `initialNumToRender` tuned to data size, and `removeClippedSubviews`. Avoid inline arrow functions in renderItem; use `useCallback`.
 - **Inputs:** Keep controlled inputs stable by lifting state up; debounce expensive side effects. Avoid recreating validation schemas on each render.
 - **Images:** Use `expo-image` with caching; size via `theme.size` and respect `contentFit="cover"`/`contain`.
