@@ -1,23 +1,28 @@
 import {
   AlertCircleIcon,
   Book02Icon,
+  Delete01Icon,
+  Edit01Icon,
   Folder01Icon,
   MoreHorizontalIcon,
   Refresh01Icon,
+  ServerStack01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { useCallback, useMemo } from "react";
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  View,
-} from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FlatList, Pressable, RefreshControl, View } from "react-native";
 import useSWR from "swr";
 
 import { fetchProjects, Project, ProjectsResponse } from "@/src/api/dashboard";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/Card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/Dialog";
 import { Skeleton } from "@/src/components/ui/Skeleton";
 import { Heading, Text, Title } from "@/src/components/ui/Text";
 import { StyleSheet } from "@/src/styles/unistyles";
@@ -99,6 +104,8 @@ const getServicesCount = (project: Project) => {
     .reduce((acc, curr) => acc + curr, 0);
 };
 
+type ProjectActionKey = "environment" | "update" | "delete";
+
 type ProjectsStateProps = {
   variant: "error" | "empty";
   message: string;
@@ -175,6 +182,13 @@ export default function ProjectsScreen() {
     "project.all",
     fetchProjects
   );
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const selectedProjectName = useMemo(() => {
+    if (!selectedProject?.name) return "";
+    const parsed = selectedProject.name.toString().trim();
+    return parsed.length > 0 ? parsed : "";
+  }, [selectedProject]);
 
   const projects = useMemo(() => normalizeProjects(data), [data]);
   const projectCount = projects.length;
@@ -183,20 +197,56 @@ export default function ProjectsScreen() {
   const iconSize = 18;
   const iconColor = theme.colors.primary;
 
+  useEffect(() => {
+    if (!actionsOpen) {
+      setSelectedProject(null);
+    }
+  }, [actionsOpen]);
+
+  const actionItems = useMemo(
+    () => [
+      {
+        key: "environment" as ProjectActionKey,
+        label: "Project Environment",
+        icon: ServerStack01Icon,
+      },
+      { key: "update" as ProjectActionKey, label: "Update", icon: Edit01Icon },
+      {
+        key: "delete" as ProjectActionKey,
+        label: "Delete",
+        icon: Delete01Icon,
+      },
+    ],
+    []
+  );
+
   const handleRefresh = useCallback(() => {
     mutate();
   }, [mutate]);
 
+  const handleOpenActions = useCallback((project: Project) => {
+    setSelectedProject(project);
+    setActionsOpen(true);
+  }, []);
+
+  const handleCloseActions = useCallback(() => {
+    setActionsOpen(false);
+  }, []);
+
+  const handleActionPress = useCallback((actionKey: ProjectActionKey) => {
+    // Future: wire navigation or mutations per actionKey.
+    setActionsOpen(false);
+  }, []);
+
   const renderProject = useCallback(
-    (item: Project, index: number) => {
+    (item: Project) => {
       const name = item.name?.toString() || "Untitled project";
-      const projectId = item.id?.toString() || `project-${index}`;
       const description = getProjectDescription(item);
       const createdLabel = formatCreatedLabel(item);
       const servicesLabel = `Services: ${getServicesCount(item)}`;
 
       return (
-        <Card key={projectId} style={styles.projectCard}>
+        <Card style={styles.projectCard}>
           <CardHeader style={styles.cardHeader}>
             <View style={styles.projectHeader}>
               <View style={styles.iconBadge}>
@@ -221,13 +271,25 @@ export default function ProjectsScreen() {
                 ) : null}
               </View>
             </View>
-            <View style={styles.menuIcon}>
+            <Pressable
+              onPress={() => handleOpenActions(item)}
+              style={styles.menuIcon}
+              hitSlop={{
+                top: theme.size[8],
+                right: theme.size[8],
+                bottom: theme.size[8],
+                left: theme.size[8],
+              }}
+              android_ripple={{ color: theme.colors.overlay }}
+              accessibilityRole="button"
+              accessibilityLabel={`Open actions for ${name}`}
+            >
               <HugeiconsIcon
                 icon={MoreHorizontalIcon}
                 size={theme.size[20]}
                 color={theme.colors.text}
               />
-            </View>
+            </Pressable>
           </CardHeader>
           <CardContent style={styles.cardContent}>
             <Text numberOfLines={1} style={styles.projectCopy}>
@@ -242,30 +304,38 @@ export default function ProjectsScreen() {
         </Card>
       );
     },
-    [iconColor, iconSize]
+    [
+      handleOpenActions,
+      iconColor,
+      iconSize,
+      theme.colors.overlay,
+      theme.colors.text,
+      theme.size,
+    ]
+  );
+
+  const renderProjectItem = useCallback(
+    ({ item }: { item: Project }) => renderProject(item),
+    [renderProject]
+  );
+
+  const keyExtractor = useCallback(
+    (item: Project, index: number) => item.id?.toString() ?? `project-${index}`,
+    []
+  );
+
+  const renderItemSeparator = useCallback(
+    () => <View style={styles.itemSeparator} />,
+    []
   );
 
   const errorMessage =
     (error as Error | undefined)?.message ??
     "Check your Dokploy server URL or PAT, then retry.";
 
-  const headerActionLabel = refreshing ? "Refreshing..." : "Refresh";
-
-  return (
-    <View style={styles.safeArea}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={theme.colors.primary}
-            colors={[theme.colors.primary]}
-            progressBackgroundColor={theme.colors.surface}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+  const listHeader = useMemo(
+    () => (
+      <View style={styles.listHeader}>
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Heading variant="h2">Projects</Heading>
@@ -287,59 +357,110 @@ export default function ProjectsScreen() {
               </View>
             </View>
           </View>
-          <View style={styles.loaderSlot}>
-            {isValidating ? (
-              <ActivityIndicator
-                size="small"
-                color={theme.colors.primary}
-                accessibilityLabel={headerActionLabel}
-              />
-            ) : (
-              <View style={styles.loaderPlaceholder} />
-            )}
-          </View>
         </View>
 
-        {error ? (
-          projects.length > 0 ? (
-            <View style={styles.alertCard}>
-              <View style={styles.alertContent}>
-                <View style={[styles.stateIcon, styles.alertIcon]}>
-                  <HugeiconsIcon
-                    icon={AlertCircleIcon}
-                    size={theme.size[20]}
-                    color={theme.colors.destructive}
-                  />
-                </View>
-                <View style={styles.alertText}>
-                  <Title variant="sm">Unable to refresh</Title>
-                  <Text style={[styles.mutedText, styles.errorText]}>
-                    {errorMessage}
-                  </Text>
-                </View>
+        {error && projects.length > 0 ? (
+          <View style={styles.alertCard}>
+            <View style={styles.alertContent}>
+              <View style={[styles.stateIcon, styles.alertIcon]}>
+                <HugeiconsIcon
+                  icon={AlertCircleIcon}
+                  size={theme.size[20]}
+                  color={theme.colors.destructive}
+                />
+              </View>
+              <View style={styles.alertText}>
+                <Title variant="sm">Unable to refresh</Title>
+                <Text style={[styles.mutedText, styles.errorText]}>
+                  {errorMessage}
+                </Text>
               </View>
             </View>
-          ) : (
-            <ProjectsState
-              variant="error"
-              message={errorMessage}
-              onAction={handleRefresh}
-            />
-          )
+          </View>
         ) : null}
+      </View>
+    ),
+    [error, errorMessage, projectCount, projects.length, theme]
+  );
 
-        {isInitialLoading ? (
-          <ProjectsSkeleton />
-        ) : projects.length === 0 ? (
-          <ProjectsState
-            variant="empty"
-            message="Your Dokploy workspace does not have projects yet."
-            onAction={handleRefresh}
+  const renderEmptyComponent = useCallback(() => {
+    if (isInitialLoading) {
+      return <ProjectsSkeleton />;
+    }
+
+    if (error) {
+      return (
+        <ProjectsState
+          variant="error"
+          message={errorMessage}
+          onAction={handleRefresh}
+        />
+      );
+    }
+
+    return (
+      <ProjectsState
+        variant="empty"
+        message="Your Dokploy workspace does not have projects yet."
+        onAction={handleRefresh}
+      />
+    );
+  }, [error, errorMessage, handleRefresh, isInitialLoading]);
+
+  return (
+    <View style={styles.safeArea}>
+      <FlatList
+        data={projects}
+        renderItem={renderProjectItem}
+        keyExtractor={keyExtractor}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+            progressBackgroundColor={theme.colors.surface}
           />
-        ) : (
-          <View style={styles.projectsList}>{projects.map(renderProject)}</View>
-        )}
-      </ScrollView>
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={renderEmptyComponent}
+        ItemSeparatorComponent={renderItemSeparator}
+      />
+      <Dialog open={actionsOpen} onOpenChange={setActionsOpen}>
+        <DialogContent onInteractOutside={handleCloseActions}>
+          <DialogHeader>
+            <DialogTitle>Actions</DialogTitle>
+            <DialogDescription>
+              {selectedProjectName
+                ? `Choose what to do with ${selectedProjectName}.`
+                : "Pick an action for this project."}
+            </DialogDescription>
+          </DialogHeader>
+          <View style={styles.actionList}>
+            {actionItems.map((action) => (
+              <Pressable
+                key={action.key}
+                style={styles.actionItem}
+                onPress={() => handleActionPress(action.key)}
+                android_ripple={{ color: theme.colors.overlay }}
+                accessibilityRole="button"
+                accessibilityLabel={`${action.label} action`}
+              >
+                <View style={styles.actionIcon}>
+                  <HugeiconsIcon
+                    icon={action.icon}
+                    size={theme.size["18"]}
+                    color={theme.colors.primary}
+                  />
+                </View>
+                <Text style={styles.actionLabel}>{action.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </DialogContent>
+      </Dialog>
     </View>
   );
 }
@@ -349,12 +470,15 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  scrollContent: {
+  listContent: {
     flexGrow: 1,
     paddingHorizontal: theme.size[16],
     paddingTop: theme.size[16],
     paddingBottom: theme.size[20],
+  },
+  listHeader: {
     gap: theme.size[16],
+    marginBottom: theme.size[16],
   },
   header: {
     flexDirection: "row",
@@ -418,8 +542,8 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: theme.font.sm,
     fontFamily: theme.families.inter,
   },
-  projectsList: {
-    gap: theme.size[12],
+  itemSeparator: {
+    height: theme.size[12],
   },
   projectCard: {
     gap: theme.size[8],
@@ -546,5 +670,35 @@ const styles = StyleSheet.create((theme) => ({
   alertText: {
     flex: 1,
     gap: theme.size[2],
+  },
+  actionList: {
+    gap: theme.size[12],
+    paddingHorizontal: theme.size[24],
+    paddingBottom: theme.size[24],
+  },
+  actionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.size[12],
+    paddingHorizontal: theme.size[12],
+    paddingVertical: theme.size[12],
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  actionIcon: {
+    width: theme.size[32],
+    height: theme.size[32],
+    borderRadius: theme.radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.mutedSurface,
+  },
+  actionLabel: {
+    color: theme.colors.text,
+    fontSize: theme.font.base,
+    fontWeight: theme.font.medium,
+    fontFamily: theme.families.inter,
   },
 }));
