@@ -25,6 +25,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="minimal"/>
+        <data android:scheme="exp+minimal"/>
       </intent-filter>
     </activity>
   </application>
