@@ -1,8 +1,7 @@
 import { HttpStatusCode } from 'axios';
-
-import { HttpError } from '@/lib/http-error';
-import { getServerUrl, normalizeServerUrl, persistServerUrl } from '@/lib/pat-storage';
 import { fetchProjects } from './dashboard';
+import { HttpError } from '../lib/http-error';
+import { getServerUrl, normalizeServerUrl, persistServerUrl } from '../lib/pat-storage';
 
 const validatePatAndServer = async (pat: string, serverUrl: string) => {
   try {

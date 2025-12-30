@@ -12,6 +12,7 @@ import {
   Image,
   Keyboard,
   KeyboardAvoidingView,
+  LayoutAnimation,
   Modal,
   Platform,
   ScrollView,
@@ -90,6 +91,11 @@ export default function LoginScreen() {
     }
   }, [pat, serverUrl, setAuthFromResponse]);
 
+  const handleNext = () => {
+    Keyboard.dismiss();
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View className="bg-background flex-1">
@@ -138,6 +144,7 @@ export default function LoginScreen() {
                         textContentType="URL"
                         className="h-12 text-base font-semibold"
                         returnKeyType="next"
+                        onSubmitEditing={handleNext}
                       />
                       <Text className="text-muted-foreground text-xs leading-5">
                         Use your self-hosted Dokploy base URL or the Dokploy Cloud address.
