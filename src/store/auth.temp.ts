@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { PAT_STORAGE_KEY, patStorage } from '@/lib/pat-storage';
+import { PAT_STORAGE_KEY, patStorage } from 'src/lib/pat-storage';
 
 export type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
 export type AuthResponse = { token: string };

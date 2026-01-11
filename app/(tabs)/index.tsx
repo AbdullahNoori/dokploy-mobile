@@ -1,8 +1,8 @@
-import { fetchProjects, type Project, type ProjectsResponse } from '@/api/dashboard';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { fetchProjects, type Project, type ProjectsResponse } from 'src/api/dashboard';
+import { Button } from 'src/components/ui/button';
+import { Card, CardContent } from 'src/components/ui/card';
+import { Icon } from 'src/components/ui/icon';
+import { Text } from 'src/components/ui/text';
 import { PencilIcon, ServerIcon, Trash2Icon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {

@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from 'src/lib/utils';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import { withUniwind } from 'uniwind';
 

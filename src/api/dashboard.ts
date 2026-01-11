@@ -1,4 +1,4 @@
-import { getRequest } from '@/lib/http';
+import { getRequest } from 'src/lib/http';
 import { AxiosRequestConfig } from 'axios';
 
 export type Project = {

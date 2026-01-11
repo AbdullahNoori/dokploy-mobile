@@ -1,11 +1,11 @@
-import { authenticateWithPat } from '@/api/auth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Text } from '@/components/ui/text';
-import { HttpError } from '@/lib/http-error';
-import { getServerUrl, normalizeServerUrl } from '@/lib/pat-storage';
-import { useAuthStore } from '@/store/auth';
+import { authenticateWithPat } from '@/src/api/auth';
+import { Button } from '@/src/components/ui/button';
+import { Card, CardContent } from '@/src/components/ui/card';
+import { Input } from '@/src/components/ui/input';
+import { Text } from '@/src/components/ui/text';
+import { HttpError } from '@/src/lib/http-error';
+import { getServerUrl, normalizeServerUrl } from '@/src/lib/pat-storage';
+import { useAuthStore } from '@/src/store/auth.temp';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
