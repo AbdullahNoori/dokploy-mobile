@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "minimal",
-    "slug": "minimal",
+    "name": "dokploy-mobile",
+    "slug": "dokploy-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "minimal",
+    "scheme": "dokploymobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -18,7 +18,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.afghan-gallery.minimal"
+      "bundleIdentifier": "com.abdullah.dokploymobile"
     },
     "android": {
       "edgeToEdgeEnabled": true,
@@ -26,7 +26,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.afghangallery.minimal"
+      "package": "com.abdullah.dokploymobile"
     },
     "web": {
       "bundler": "metro",
@@ -39,6 +39,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "aa1e3fb7-f438-42d5-8986-3124b5b74602"
+      }
     }
   }
 }

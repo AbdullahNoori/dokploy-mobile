@@ -1,8 +1,8 @@
 import { AxiosError, AxiosRequestConfig } from 'axios';
 
-import { api } from '@/lib/api';
 import { HttpError } from './http-error';
 import { getServerUrl, normalizeServerUrl } from './pat-storage';
+import { api } from './api';
 
 const withBaseURL = (config?: AxiosRequestConfig<any>): AxiosRequestConfig<any> => {
   const baseURL = normalizeServerUrl(config?.baseURL ?? getServerUrl());

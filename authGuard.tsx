@@ -1,12 +1,14 @@
 import { Redirect } from 'expo-router';
-import { useAuthStore } from './src/store/auth';
+import type { ReactNode } from 'react';
 
-export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { token, hydrated } = useAuthStore();
+import { useAuth } from '@/src/auth/useAuth';
 
-  if (!hydrated) return null; // or splash
+export function AuthGate({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (!token) return <Redirect href="/(tabs)" />;
+  if (isLoading) return null; // or splash
+
+  if (!isAuthenticated) return <Redirect href="/(auth)" />;
 
   return children;
 }

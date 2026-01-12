@@ -1,81 +1,11 @@
-import { Button } from 'src/components/ui/button';
-import { Icon } from 'src/components/ui/icon';
-import { Text } from 'src/components/ui/text';
-import { Link, Stack, useRouter } from 'expo-router';
-import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
-import * as React from 'react';
-import { Image, type ImageStyle, View } from 'react-native';
-import { Uniwind, useUniwind } from 'uniwind';
+import { Redirect } from 'expo-router';
 
-const LOGO = {
-  light: require('@/assets/images/react-native-reusables-light.png'),
-  dark: require('@/assets/images/react-native-reusables-dark.png'),
-};
+import { useAuth } from '@/src/auth/useAuth';
 
-const SCREEN_OPTIONS = {
-  title: 'React Native Reusables',
-  headerTransparent: true,
-  headerRight: () => <ThemeToggle />,
-};
+export default function Index() {
+  const { isAuthenticated, isLoading } = useAuth();
 
-const IMAGE_STYLE: ImageStyle = {
-  height: 76,
-  width: 76,
-};
+  if (isLoading) return null;
 
-export default function Screen() {
-  const { theme } = useUniwind();
-  const router = useRouter();
-
-  return (
-    <>
-      <Stack.Screen options={SCREEN_OPTIONS} />
-      <View className="flex-1 items-center justify-center gap-8 p-4">
-        <Image source={LOGO[theme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
-        <View className="gap-2 p-4">
-          <Text className="ios:text-foreground text-muted-foreground font-mono text-sm">
-            1. Edit <Text variant="code">app/index.tsx</Text> to get started.
-          </Text>
-          <Text className="ios:text-foreground text-muted-foreground font-mono text-sm">
-            2. Save to see your changes instantly.
-          </Text>
-        </View>
-        <View className="flex-row gap-2">
-          <Link href="https://reactnativereusables.com" asChild>
-            <Button>
-              <Text>Browse the Docs</Text>
-            </Button>
-          </Link>
-          <Button variant="ghost" onPress={() => router.push('/(auth)')}>
-            <Text>Star the Repo</Text>
-            <Icon as={StarIcon} />
-          </Button>
-        </View>
-      </View>
-    </>
-  );
-}
-
-const THEME_ICONS = {
-  light: SunIcon,
-  dark: MoonStarIcon,
-};
-
-function ThemeToggle() {
-  const { theme } = useUniwind();
-
-  function toggleTheme() {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    Uniwind.setTheme(newTheme);
-  }
-
-  return (
-    <Button
-      onPressIn={toggleTheme}
-      size="icon"
-      variant="ghost"
-      className="ios:size-9 web:mx-4 rounded-full">
-      <Icon as={THEME_ICONS[theme ?? 'light']} className="size-5" />
-    </Button>
-  );
+  return <Redirect href={isAuthenticated ? '/(app)' : '/(auth)'} />;
 }
