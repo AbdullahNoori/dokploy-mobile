@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { HomeIcon, SettingsIcon } from 'lucide-react-native';
+import { HomeIcon, Plus, SettingsIcon } from 'lucide-react-native';
 
 export default function AppTabsLayout() {
   return (
@@ -8,6 +8,9 @@ export default function AppTabsLayout() {
         name="index"
         options={{
           title: 'Projects',
+          headerShown: true,
+          headerTitleAlign: 'left',
+          headerRight: () => <Plus color={'white'} size={22} style={{ marginRight: 10 }} />,
           tabBarIcon: ({ color, size }) => <HomeIcon color={color} size={size} />,
         }}
       />

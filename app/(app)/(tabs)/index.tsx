@@ -1,9 +1,11 @@
-import { fetchProjects, type Project, type ProjectsResponse } from 'src/api/dashboard';
-import { Button } from 'src/components/ui/button';
-import { Card, CardContent } from 'src/components/ui/card';
-import { Icon } from 'src/components/ui/icon';
-import { Text } from 'src/components/ui/text';
-import { PencilIcon, ServerIcon, Trash2Icon } from 'lucide-react-native';
+import {
+  Book,
+  Ellipsis,
+  PencilIcon,
+  SearchIcon,
+  ServerIcon,
+  Trash2Icon,
+} from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
@@ -13,6 +15,12 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
+import { fetchProjects, type Project, type ProjectsResponse } from 'src/api/projects';
+import { Button } from 'src/components/ui/button';
+import { Card, CardContent } from 'src/components/ui/card';
+import { Icon } from 'src/components/ui/icon';
+import { Input } from 'src/components/ui/input';
+import { Text } from 'src/components/ui/text';
 import useSWR from 'swr';
 
 type ProjectActionKey = 'environment' | 'update' | 'delete';
@@ -48,7 +56,7 @@ const getProjectDescription = (project: Project) => {
 };
 
 const formatProjectId = (id: string) =>
-  id.length > 16 ? `${id.slice(0, 8)}...${id.slice(-4)}` : id;
+  id?.length > 16 ? `${id.slice(0, 8)}...${id.slice(-4)}` : id;
 
 const formatCreatedLabel = (project: Project) => {
   const createdAt =
@@ -75,6 +83,56 @@ const formatCreatedLabel = (project: Project) => {
   if (diffDays === 1) return 'Created 1 day ago';
 
   return `Created ${diffDays} days ago`;
+};
+
+const getProjectStatus = (project: Project) => {
+  const record = project as Record<string, unknown>;
+  const statusValue = record.status ?? record.state ?? record.projectStatus ?? record.health;
+
+  if (typeof statusValue === 'string') {
+    const trimmed = statusValue.trim();
+    return trimmed.length > 0 ? trimmed.toLowerCase() : 'unknown';
+  }
+
+  if (typeof statusValue === 'boolean') {
+    return statusValue ? 'active' : 'inactive';
+  }
+
+  return 'unknown';
+};
+
+const formatStatusLabel = (status: string) => {
+  if (!status || status === 'unknown') return 'Unknown';
+  return status
+    .split(/[\s-_]+/)
+    .filter(Boolean)
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(' ');
+};
+
+const getStatusTone = (status: string) => {
+  const normalized = status.toLowerCase();
+  const healthy = ['active', 'running', 'healthy', 'online', 'ready'];
+  const unhealthy = ['failed', 'error', 'down', 'stopped', 'inactive'];
+
+  if (healthy.includes(normalized)) {
+    return {
+      containerClass: 'bg-emerald-500/10 border-emerald-500/20',
+      textClass: 'text-emerald-500',
+    };
+  }
+
+  if (unhealthy.includes(normalized)) {
+    return {
+      containerClass: 'bg-red-500/10 border-red-500/20',
+      textClass: 'text-red-500',
+    };
+  }
+
+  return {
+    containerClass: 'bg-muted/70 border-border',
+    textClass: 'text-foreground',
+  };
 };
 
 const getServicesCount = (project: Project) => {
@@ -157,33 +215,39 @@ function ProjectsState({ variant, message, onAction }: ProjectsStateProps) {
 
 function ProjectsHeader({
   projectCount,
+  filteredCount,
   onRefresh,
   hasError,
   errorMessage,
+  searchValue,
+  onSearchChange,
+  statusOptions,
+  selectedStatus,
+  onStatusChange,
+  onCreateProject,
 }: {
   projectCount: number;
+  filteredCount: number;
   onRefresh: () => void;
   hasError: boolean;
   errorMessage: string;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  statusOptions: string[];
+  selectedStatus: string;
+  onStatusChange: (value: string) => void;
+  onCreateProject: () => void;
 }) {
   return (
     <View className="gap-3 pb-4">
-      <View className="flex-row items-start justify-between gap-4">
-        <View className="flex-1 gap-1">
-          <Text className="text-foreground text-2xl font-bold">Projects</Text>
-          <Text className="text-muted-foreground text-sm leading-5">
-            Keep your Dokploy projects in sync and ready for deployments.
-          </Text>
-          <View className="flex-row items-center gap-2 pt-2">
-            <View className="bg-muted/60 border-border flex-row items-center gap-2 rounded-full border px-3 py-1.5">
-              <Text className="text-muted-foreground text-xs tracking-wide uppercase">Total</Text>
-              <Text className="text-foreground text-sm font-semibold">{projectCount}</Text>
-            </View>
-            <Button variant="ghost" size="sm" onPress={onRefresh} className="h-9 px-3">
-              <Text className="text-primary text-sm font-semibold">Refresh</Text>
-            </Button>
-          </View>
-        </View>
+      <View className="bg-input flex-row items-center gap-2 rounded-xl border px-3 py-2">
+        <Icon as={SearchIcon} className="text-muted-foreground size-4" />
+        <Input
+          value={searchValue}
+          onChangeText={onSearchChange}
+          placeholder="Filter projects..."
+          className="text-foreground bg-input flex-1 border-0 px-0 py-0 shadow-none"
+        />
       </View>
 
       {hasError ? (
@@ -214,13 +278,16 @@ function ProjectCard({
   const description = getProjectDescription(project);
   const createdLabel = formatCreatedLabel(project);
   const servicesLabel = `Services: ${getServicesCount(project)}`;
+  const status = getProjectStatus(project);
+  const statusLabel = formatStatusLabel(status);
+  const statusTone = getStatusTone(status);
 
   return (
-    <Card>
+    <Card className="bg-background">
       <CardContent className="gap-4">
         <View className="flex-row items-start gap-3">
-          <View className="bg-primary/10 items-center justify-center rounded-full p-2">
-            <Icon as={ServerIcon} className="text-primary size-5" />
+          <View className="bg-background items-center justify-center rounded-full p-2">
+            <Icon as={Book} className="text-primary size-5" />
           </View>
           <View className="flex-1 gap-1">
             <Text className="text-foreground text-base font-semibold" numberOfLines={1}>
@@ -237,16 +304,20 @@ function ProjectCard({
             onPress={() => onActionsOpen(project)}
             accessibilityRole="button"
             accessibilityLabel={`Open actions for ${name}`}
-            className="bg-accent/60 border-border flex-row items-center gap-2 rounded-full border px-3 py-2">
-            <Icon as={PencilIcon} className="text-foreground size-4" />
-            <Text className="text-foreground text-sm font-medium">Actions</Text>
+            className="bg-background flex-row items-center gap-2 rounded-full border px-3 py-2">
+            <Icon as={Ellipsis} className="text-foreground size-4" />
           </Pressable>
         </View>
 
         <View className="flex-row items-center justify-between">
           <Text className="text-muted-foreground text-sm">{createdLabel}</Text>
-          <View className="bg-muted/70 rounded-full px-3 py-1">
-            <Text className="text-foreground text-xs font-semibold">{servicesLabel}</Text>
+          <View className="flex-row items-center gap-2">
+            {/* <View className={`border ${statusTone.containerClass} rounded-full px-3 py-1`}>
+              <Text className={`text-xs font-semibold ${statusTone.textClass}`}>{statusLabel}</Text>
+            </View> */}
+            <View className="bg-muted/70 rounded-md px-3 py-1">
+              <Text className="text-foreground text-xs font-semibold">{servicesLabel}</Text>
+            </View>
           </View>
         </View>
       </CardContent>
@@ -312,9 +383,36 @@ export default function ProjectsScreen() {
   );
   const [actionsOpen, setActionsOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('all');
 
   const projects = useMemo(() => normalizeProjects(data), [data]);
   const projectCount = projects.length;
+  const statusOptions = useMemo(() => {
+    const options = new Set<string>();
+
+    projects.forEach((project) => {
+      const status = getProjectStatus(project);
+      if (status) {
+        options.add(status);
+      }
+    });
+
+    return ['all', ...Array.from(options).sort()];
+  }, [projects]);
+  const filteredProjects = useMemo(() => {
+    const normalizedSearch = searchValue.trim().toLowerCase();
+
+    return projects.filter((project) => {
+      const name = project.name?.toString().toLowerCase() ?? '';
+      const matchesSearch = normalizedSearch.length === 0 || name.includes(normalizedSearch);
+      const status = getProjectStatus(project);
+      const matchesStatus = selectedStatus === 'all' || status === selectedStatus;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [projects, searchValue, selectedStatus]);
+  const filteredCount = filteredProjects.length;
   const isInitialLoading = isLoading && !data;
   const refreshing = isValidating && !isInitialLoading;
 
@@ -324,9 +422,19 @@ export default function ProjectsScreen() {
     }
   }, [actionsOpen]);
 
+  useEffect(() => {
+    if (!statusOptions.includes(selectedStatus)) {
+      setSelectedStatus('all');
+    }
+  }, [selectedStatus, statusOptions]);
+
   const handleRefresh = useCallback(() => {
     mutate();
   }, [mutate]);
+
+  const handleCreateProject = useCallback(() => {
+    console.info('Create project pressed');
+  }, []);
 
   const handleOpenActions = useCallback((project: Project) => {
     setSelectedProject(project);
@@ -366,6 +474,16 @@ export default function ProjectsScreen() {
       return <ProjectsState variant="error" message={errorMessage} onAction={handleRefresh} />;
     }
 
+    if (projects.length > 0) {
+      return (
+        <ProjectsState
+          variant="empty"
+          message="No projects match the current search or status filters."
+          onAction={handleRefresh}
+        />
+      );
+    }
+
     return (
       <ProjectsState
         variant="empty"
@@ -373,21 +491,28 @@ export default function ProjectsScreen() {
         onAction={handleRefresh}
       />
     );
-  }, [error, errorMessage, handleRefresh, isInitialLoading]);
+  }, [error, errorMessage, handleRefresh, isInitialLoading, projects.length]);
 
   return (
     <View className="bg-background flex-1">
       <FlatList
-        data={projects}
+        data={filteredProjects}
         renderItem={renderProjectItem}
         keyExtractor={keyExtractor}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         ListHeaderComponent={
           <ProjectsHeader
             projectCount={projectCount}
+            filteredCount={filteredCount}
             onRefresh={handleRefresh}
             hasError={!!error && projects.length > 0}
             errorMessage={errorMessage}
+            searchValue={searchValue}
+            onSearchChange={setSearchValue}
+            statusOptions={statusOptions}
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+            onCreateProject={handleCreateProject}
           />
         }
         ListEmptyComponent={renderListEmpty}
