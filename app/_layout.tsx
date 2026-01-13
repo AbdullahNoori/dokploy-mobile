@@ -1,3 +1,4 @@
+import '@/src/reactotron';
 import '@/global.css';
 import { NAV_THEME } from '@/src/lib/theme';
 

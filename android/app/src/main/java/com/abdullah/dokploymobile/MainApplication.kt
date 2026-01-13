@@ -1,4 +1,4 @@
-package com.afghangallery.minimal
+package com.abdullah.dokploymobile
 
 import android.app.Application
 import android.content.res.Configuration
