@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>minimal</string>
+    <string>dokploy-mobile</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,14 +27,14 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>minimal</string>
-          <string>com.afghan-gallery.minimal</string>
+          <string>dokploymobile</string>
+          <string>com.abdullah.dokploymobile</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>exp+minimal</string>
+          <string>exp+dokploy-mobile</string>
         </array>
       </dict>
     </array>

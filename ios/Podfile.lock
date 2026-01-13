@@ -1,12 +1,12 @@
 PODS:
   - EASClient (1.0.8):
     - ExpoModulesCore
-  - EXConstants (18.0.12):
+  - EXConstants (18.0.13):
     - ExpoModulesCore
   - EXJSONUtils (0.15.0)
   - EXManifests (1.0.10):
     - ExpoModulesCore
-  - Expo (54.0.29):
+  - Expo (54.0.31):
     - ExpoModulesCore
     - hermes-engine
     - RCTRequired
@@ -202,7 +202,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - ExpoAsset (12.0.11):
+  - ExpoAsset (12.0.12):
     - ExpoModulesCore
   - ExpoFileSystem (19.0.21):
     - ExpoModulesCore
@@ -210,12 +210,12 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (15.0.8):
     - ExpoModulesCore
-  - ExpoHead (6.0.19):
+  - ExpoHead (6.0.21):
     - ExpoModulesCore
     - RNScreens
   - ExpoKeepAwake (15.0.8):
     - ExpoModulesCore
-  - ExpoLinking (8.0.10):
+  - ExpoLinking (8.0.11):
     - ExpoModulesCore
   - ExpoModulesCore (3.0.29):
     - hermes-engine
@@ -240,12 +240,14 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - ExpoSplashScreen (31.0.12):
+  - ExpoSecureStore (15.0.8):
+    - ExpoModulesCore
+  - ExpoSplashScreen (31.0.13):
     - ExpoModulesCore
   - ExpoSystemUI (6.0.9):
     - ExpoModulesCore
   - EXStructuredHeaders (5.0.0)
-  - EXUpdates (29.0.15):
+  - EXUpdates (29.0.16):
     - EASClient
     - EXManifests
     - ExpoModulesCore
@@ -280,7 +282,7 @@ PODS:
     - hermes-engine/Pre-built (= 0.81.5)
   - hermes-engine/Pre-built (0.81.5)
   - MMKVCore (2.2.4)
-  - NitroMmkv (4.1.0):
+  - NitroMmkv (4.1.1):
     - hermes-engine
     - MMKVCore (= 2.2.4)
     - NitroModules
@@ -305,7 +307,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - NitroModules (0.31.10):
+  - NitroModules (0.33.0):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2373,6 +2375,7 @@ DEPENDENCIES:
   - ExpoKeepAwake (from `../node_modules/expo-keep-awake/ios`)
   - ExpoLinking (from `../node_modules/expo-linking/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
+  - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
   - EXStructuredHeaders (from `../node_modules/expo-structured-headers/ios`)
@@ -2497,6 +2500,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-linking/ios"
   ExpoModulesCore:
     :path: "../node_modules/expo-modules-core"
+  ExpoSecureStore:
+    :path: "../node_modules/expo-secure-store/ios"
   ExpoSplashScreen:
     :path: "../node_modules/expo-splash-screen/ios"
   ExpoSystemUI:
@@ -2665,32 +2670,33 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   EASClient: 40dd9e740684782610c49becab2643782ea1a20c
-  EXConstants: 805f35b1b295c542ca6acce836f21a1f9ee104d5
+  EXConstants: fce59a631a06c4151602843667f7cfe35f81e271
   EXJSONUtils: 1d3e4590438c3ee593684186007028a14b3686cd
   EXManifests: a8d97683e5c7a3b026ffbd58559c64dc655b747b
-  Expo: 8fa2204bf8483fe546b4ec87c90d3ca189afc8db
+  Expo: 04993fbd7b06dc98ffac58da8847298470dc3db1
   expo-dev-client: 425ee077d6754a98cfe3a2e2410d29b440b24c9d
   expo-dev-launcher: a4f4cdef064ab1fb8621e5b8c7c457cd6e9568c3
   expo-dev-menu: 05b18812110c175814c6af0d09dd658abcc5e00d
   expo-dev-menu-interface: 600df12ea01efecdd822daaf13cc0ac091775533
-  ExpoAsset: 23a958e97d3d340919fe6774db35d563241e6c03
+  ExpoAsset: f867e55ceb428aab99e1e8c082b5aee7c159ea18
   ExpoFileSystem: 858a44267a3e6e9057e0888ad7c7cfbf55d52063
   ExpoFont: 35ac6191ed86bbf56b3ebd2d9154eda9fad5b509
   ExpoHaptics: d3a6375d8dcc3a1083d003bc2298ff654fafb536
-  ExpoHead: 5d3fd633fce8f2c3a2cb97ff39fd497b7dd3d268
+  ExpoHead: 9719a74953454fac328e90f34eea55ebbb3bbbf9
   ExpoKeepAwake: 55f75eca6499bb9e4231ebad6f3e9cb8f99c0296
-  ExpoLinking: f4c4a351523da72a6bfa7e1f4ca92aee1043a3ca
+  ExpoLinking: 8f0aaf69aa56f832913030503b6263dc6f647f37
   ExpoModulesCore: f3da4f1ab5a8375d0beafab763739dbee8446583
-  ExpoSplashScreen: 76af87337650d06926aa7d0157fe98b4fddca336
+  ExpoSecureStore: d32f751874a2ceb5aaeebeb3578e165c1ba2b24a
+  ExpoSplashScreen: bc3cffefca2716e5f22350ca109badd7e50ec14d
   ExpoSystemUI: 2ad325f361a2fcd96a464e8574e19935c461c9cc
   EXStructuredHeaders: c951e77f2d936f88637421e9588c976da5827368
-  EXUpdates: f20abbc8a9f4e150656fe88126d52f52d4e7793f
+  EXUpdates: f86d4af4362c2c83a7bf8531d777e9fba680e2d9
   EXUpdatesInterface: 5adf50cb41e079c861da6d9b4b954c3db9a50734
   FBLazyVector: e95a291ad2dadb88e42b06e0c5fb8262de53ec12
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172
   MMKVCore: f2dd4c9befea04277a55e84e7812f930537993df
-  NitroMmkv: 4af10c70043b4c3cded3f16547627c7d9d8e3b8b
-  NitroModules: a71a5ab2911caf79e45170e6e12475b5260a12d0
+  NitroMmkv: c2ac4aeaafe7b53ff086789dccfa249d72fd1524
+  NitroModules: 99976a52da55e70d3279efd639e667def5d6d346
   RCTDeprecation: 943572d4be82d480a48f4884f670135ae30bf990
   RCTRequired: 8f3cfc90cc25cf6e420ddb3e7caaaabc57df6043
   RCTTypeSafety: 16a4144ca3f959583ab019b57d5633df10b5e97c
@@ -2766,6 +2772,6 @@ SPEC CHECKSUMS:
   RNWorklets: 76fce72926e28e304afb44f0da23b2d24f2c1fa0
   Yoga: 5934998fbeaef7845dbf698f698518695ab4cd1a
 
-PODFILE CHECKSUM: 1b6722753152d9d4ef8f69857f71fd75ad879ef5
+PODFILE CHECKSUM: 8d6111eaa0e5ba5ed6f475e6ad82863aeec895e9
 
 COCOAPODS: 1.16.2

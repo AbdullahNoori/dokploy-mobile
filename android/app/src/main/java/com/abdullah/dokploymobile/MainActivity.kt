@@ -1,4 +1,4 @@
-package com.afghangallery.minimal
+package com.abdullah.dokploymobile
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

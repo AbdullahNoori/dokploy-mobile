@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.afghangallery.minimal'
+    namespace 'com.abdullah.dokploymobile'
     defaultConfig {
-        applicationId 'com.afghangallery.minimal'
+        applicationId 'com.abdullah.dokploymobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
