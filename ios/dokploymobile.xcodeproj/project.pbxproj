@@ -22,7 +22,7 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = dokploymobile/Info.plist; sourceTree = "<group>"; };
 		519DB80E5F95F5B28F8EE169 /* libPods-dokploymobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-dokploymobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		57D13C02C556E850F2EDE568 /* Pods-dokploymobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-dokploymobile.release.xcconfig"; path = "Target Support Files/Pods-dokploymobile/Pods-dokploymobile.release.xcconfig"; sourceTree = "<group>"; };
-		785CD3CE36FF926C0AADA398 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = dokploymobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		785CD3CE36FF926C0AADA398 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = dokploymobile/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		950178E0D508EBA1C0BBF369 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-dokploymobile/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = dokploymobile/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
@@ -89,7 +89,6 @@
 				EF447BC3C1B3A014D126B9A7 /* Pods-dokploymobile.debug.xcconfig */,
 				57D13C02C556E850F2EDE568 /* Pods-dokploymobile.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -351,6 +350,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = dokploymobile/dokploymobile.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GHT55XPTQ8;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -370,7 +370,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.abdullah.dokploymobile;
-				PRODUCT_NAME = "dokploymobile";
+				PRODUCT_NAME = dokploymobile;
 				SWIFT_OBJC_BRIDGING_HEADER = "dokploymobile/dokploymobile-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -387,6 +387,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = dokploymobile/dokploymobile.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GHT55XPTQ8;
 				INFOPLIST_FILE = dokploymobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -401,7 +402,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.abdullah.dokploymobile;
-				PRODUCT_NAME = "dokploymobile";
+				PRODUCT_NAME = dokploymobile;
 				SWIFT_OBJC_BRIDGING_HEADER = "dokploymobile/dokploymobile-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

@@ -3,9 +3,28 @@ import { getRequest } from 'src/lib/http';
 import { PAT_STORAGE_KEY, patStorage } from 'src/lib/pat-storage';
 
 export type Project = {
-  id: string;
+  id?: string;
+  projectId?: string;
   name: string;
   [key: string]: unknown;
+};
+
+export type ProjectEnvironment = {
+  environmentId?: string;
+  name?: string;
+  description?: string;
+  applications?: unknown[];
+  compose?: unknown[];
+  mariadb?: unknown[];
+  mongo?: unknown[];
+  mysql?: unknown[];
+  postgres?: unknown[];
+  redis?: unknown[];
+  [key: string]: unknown;
+};
+
+export type ProjectDetail = Project & {
+  environments?: ProjectEnvironment[];
 };
 
 export type ProjectsResponse =
@@ -32,4 +51,8 @@ const withPatHeader = (config?: AxiosRequestConfig<any>): AxiosRequestConfig<any
 
 export function fetchProjects(config?: AxiosRequestConfig<any>) {
   return getRequest<ProjectsResponse>('project.all', undefined, withPatHeader(config));
+}
+
+export function fetchProject(projectId: string, config?: AxiosRequestConfig<any>) {
+  return getRequest<ProjectDetail>('project.one', { projectId }, withPatHeader(config));
 }

@@ -15,6 +15,7 @@ import {
   View,
   type ListRenderItem,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { fetchProjects, type Project, type ProjectsResponse } from 'src/api/projects';
 import { Button } from 'src/components/ui/button';
 import { Card, CardContent } from 'src/components/ui/card';
@@ -57,6 +58,8 @@ const getProjectDescription = (project: Project) => {
 
 const formatProjectId = (id: string) =>
   id?.length > 16 ? `${id.slice(0, 8)}...${id.slice(-4)}` : id;
+
+const getProjectId = (project: Project) => project.projectId ?? project.id ?? '';
 
 const formatCreatedLabel = (project: Project) => {
   const createdAt =
@@ -270,9 +273,11 @@ function ProjectsHeader({
 function ProjectCard({
   project,
   onActionsOpen,
+  onPress,
 }: {
   project: Project;
   onActionsOpen: (project: Project) => void;
+  onPress: (project: Project) => void;
 }) {
   const name = project.name?.toString() || 'Untitled project';
   const description = getProjectDescription(project);
@@ -283,45 +288,52 @@ function ProjectCard({
   const statusTone = getStatusTone(status);
 
   return (
-    <Card className="bg-background">
-      <CardContent className="gap-4">
-        <View className="flex-row items-start gap-3">
-          <View className="bg-background items-center justify-center rounded-full p-2">
-            <Icon as={Book} className="text-primary size-5" />
-          </View>
-          <View className="flex-1 gap-1">
-            <Text className="text-foreground text-base font-semibold" numberOfLines={1}>
-              {name}
-            </Text>
-            {description ? (
-              <Text className="text-muted-foreground text-sm leading-5" numberOfLines={2}>
-                {description}
+    <Pressable
+      onPress={() => onPress(project)}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${name}`}>
+      <Card className="bg-background">
+        <CardContent className="gap-4">
+          <View className="flex-row items-start gap-3">
+            <View className="bg-background items-center justify-center rounded-full p-2">
+              <Icon as={Book} className="text-primary size-5" />
+            </View>
+            <View className="flex-1 gap-1">
+              <Text className="text-foreground text-base font-semibold" numberOfLines={1}>
+                {name}
               </Text>
-            ) : null}
-            <Text className="text-muted-foreground text-xs">{formatProjectId(project.id)}</Text>
+              {description ? (
+                <Text className="text-muted-foreground text-sm leading-5" numberOfLines={2}>
+                  {description}
+                </Text>
+              ) : null}
+              <Text className="text-muted-foreground text-xs">
+                {formatProjectId(getProjectId(project))}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => onActionsOpen(project)}
+              accessibilityRole="button"
+              accessibilityLabel={`Open actions for ${name}`}
+              className="bg-background flex-row items-center gap-2 rounded-full border px-3 py-2">
+              <Icon as={Ellipsis} className="text-foreground size-4" />
+            </Pressable>
           </View>
-          <Pressable
-            onPress={() => onActionsOpen(project)}
-            accessibilityRole="button"
-            accessibilityLabel={`Open actions for ${name}`}
-            className="bg-background flex-row items-center gap-2 rounded-full border px-3 py-2">
-            <Icon as={Ellipsis} className="text-foreground size-4" />
-          </Pressable>
-        </View>
 
-        <View className="flex-row items-center justify-between">
-          <Text className="text-muted-foreground text-sm">{createdLabel}</Text>
-          <View className="flex-row items-center gap-2">
-            {/* <View className={`border ${statusTone.containerClass} rounded-full px-3 py-1`}>
-              <Text className={`text-xs font-semibold ${statusTone.textClass}`}>{statusLabel}</Text>
-            </View> */}
-            <View className="bg-muted/70 rounded-md px-3 py-1">
-              <Text className="text-foreground text-xs font-semibold">{servicesLabel}</Text>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-muted-foreground text-sm">{createdLabel}</Text>
+            <View className="flex-row items-center gap-2">
+              {/* <View className={`border ${statusTone.containerClass} rounded-full px-3 py-1`}>
+                <Text className={`text-xs font-semibold ${statusTone.textClass}`}>{statusLabel}</Text>
+              </View> */}
+              <View className="bg-muted/70 rounded-md px-3 py-1">
+                <Text className="text-foreground text-xs font-semibold">{servicesLabel}</Text>
+              </View>
             </View>
           </View>
-        </View>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </Pressable>
   );
 }
 
@@ -377,6 +389,7 @@ function ActionsModal({
 }
 
 export default function ProjectsScreen() {
+  const router = useRouter();
   const { data, error, isLoading, isValidating, mutate } = useSWR<ProjectsResponse>(
     'project.all',
     fetchProjects
@@ -441,6 +454,20 @@ export default function ProjectsScreen() {
     setActionsOpen(true);
   }, []);
 
+  const handleProjectPress = useCallback(
+    (project: Project) => {
+      const projectId = getProjectId(project).toString();
+
+      if (!projectId) {
+        console.warn('Project ID is missing, skipping project.one request.');
+        return;
+      }
+
+      router.push({ pathname: '/project/[projectId]', params: { projectId } });
+    },
+    [router]
+  );
+
   const handleActionPress = useCallback((actionKey: ProjectActionKey) => {
     // Future: wire navigation or mutations per actionKey.
     setActionsOpen(false);
@@ -456,14 +483,16 @@ export default function ProjectsScreen() {
     (error as Error | undefined)?.message ?? 'Check your Dokploy server URL or PAT, then retry.';
 
   const renderProjectItem = useCallback<ListRenderItem<Project>>(
-    ({ item }) => <ProjectCard project={item} onActionsOpen={handleOpenActions} />,
-    [handleOpenActions]
+    ({ item }) => (
+      <ProjectCard project={item} onActionsOpen={handleOpenActions} onPress={handleProjectPress} />
+    ),
+    [handleOpenActions, handleProjectPress]
   );
 
-  const keyExtractor = useCallback(
-    (item: Project, index: number) => item.id?.toString() ?? `project-${index}`,
-    []
-  );
+  const keyExtractor = useCallback((item: Project, index: number) => {
+    const projectId = getProjectId(item);
+    return projectId.length > 0 ? projectId : `project-${index}`;
+  }, []);
 
   const renderListEmpty = useCallback(() => {
     if (isInitialLoading) {
