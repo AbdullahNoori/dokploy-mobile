@@ -1,6 +1,6 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import useSWR from 'swr';
 
 import { fetchProject, type ProjectDetail, type ProjectEnvironment } from 'src/api/projects';
@@ -14,17 +14,20 @@ type ServiceItem = {
   type: string;
   environmentName: string;
   status: string;
+  serviceType: ServiceType;
+  serviceId?: string;
 };
 
-const serviceSources = [
-  { key: 'applications', label: 'Application' },
-  { key: 'compose', label: 'Compose' },
+type ServiceType = 'postgres' | 'mysql' | 'mariadb' | 'mongo' | 'redis' | 'compose';
+
+const serviceSources: Array<{ key: ServiceType; label: string }> = [
+  { key: 'postgres', label: 'Postgres' },
+  { key: 'mysql', label: 'MySQL' },
   { key: 'mariadb', label: 'MariaDB' },
   { key: 'mongo', label: 'MongoDB' },
-  { key: 'mysql', label: 'MySQL' },
-  { key: 'postgres', label: 'Postgres' },
   { key: 'redis', label: 'Redis' },
-] as const;
+  { key: 'compose', label: 'Compose' },
+];
 
 const getProjectName = (project: ProjectDetail | undefined) => {
   const raw = project?.name?.toString() ?? '';
@@ -86,8 +89,11 @@ const buildServices = (environments: ProjectEnvironment[] | undefined): ServiceI
         const fallback = `${source.label} ${index + 1}`;
         const name = getServiceName(service, fallback);
         const record = service as Record<string, unknown>;
+        const serviceIdKey = `${source.key}Id`;
         const serviceId =
-          typeof record?.id === 'string' ? record.id : `${source.key}-${index + 1}-${name}`;
+          typeof record[serviceIdKey] === 'string'
+            ? (record[serviceIdKey] as string)
+            : undefined;
         const status = getServiceStatus(service);
 
         services.push({
@@ -96,6 +102,8 @@ const buildServices = (environments: ProjectEnvironment[] | undefined): ServiceI
           type: source.label,
           environmentName,
           status,
+          serviceType: source.key,
+          serviceId,
         });
       });
     });
@@ -107,6 +115,7 @@ const buildServices = (environments: ProjectEnvironment[] | undefined): ServiceI
 export default function ProjectServicesScreen() {
   const { projectId } = useLocalSearchParams<{ projectId?: string }>();
   const normalizedProjectId = Array.isArray(projectId) ? projectId[0] : projectId;
+  const router = useRouter();
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<ProjectDetail>(
     normalizedProjectId ? `project.one:${normalizedProjectId}` : null,
@@ -117,6 +126,18 @@ export default function ProjectServicesScreen() {
   const services = useMemo(() => buildServices(data?.environments), [data]);
   const refreshing = isValidating && !isLoading;
   const errorMessage = (error as Error | undefined)?.message ?? 'Unable to load project services.';
+
+  const handleApplicationPress = (item: ServiceItem) => {
+    if (!item.serviceId) {
+      console.warn('Service ID is missing, skipping application view.');
+      return;
+    }
+
+    router.push({
+      pathname: '/application/[serviceType]/[serviceId]',
+      params: { serviceType: item.serviceType, serviceId: item.serviceId },
+    });
+  };
 
   return (
     <View className="bg-background flex-1">
@@ -145,22 +166,33 @@ export default function ProjectServicesScreen() {
             </CardContent>
           </Card>
         }
-        renderItem={({ item }) => (
-          <Card className="bg-card relative">
-            {item.status === 'done' ? (
-              <View className="border-background absolute -top-1 -right-1 size-3 rounded-full border-2 bg-emerald-500" />
-            ) : null}
-            <CardContent className="gap-2">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-foreground text-base font-semibold">{item.name}</Text>
-                <Text className="text-muted-foreground text-xs">{item.type}</Text>
-              </View>
-              <Text className="text-muted-foreground text-sm">
-                Environment: {item.environmentName}
-              </Text>
-            </CardContent>
-          </Card>
-        )}
+        renderItem={({ item }) => {
+          const card = (
+            <Card className="bg-card relative">
+              {item.status === 'done' ? (
+                <View className="border-background absolute -top-1 -right-1 size-3 rounded-full border-2 bg-emerald-500" />
+              ) : null}
+              <CardContent className="gap-2">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-foreground text-base font-semibold">{item.name}</Text>
+                  <Text className="text-muted-foreground text-xs">{item.type}</Text>
+                </View>
+                <Text className="text-muted-foreground text-sm">
+                  Environment: {item.environmentName}
+                </Text>
+              </CardContent>
+            </Card>
+          );
+
+          return (
+            <Pressable
+              onPress={() => handleApplicationPress(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${item.name}`}>
+              {card}
+            </Pressable>
+          );
+        }}
       />
     </View>
   );

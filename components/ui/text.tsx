@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/src/lib/utils';
 import * as Slot from '@rn-primitives/slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
@@ -32,7 +32,7 @@ const textVariants = cva(
         ),
         lead: 'text-muted-foreground text-xl',
         large: 'text-lg font-semibold',
-        small: 'text-sm font-medium leading-none',
+        small: 'text-sm leading-none font-medium',
         muted: 'text-muted-foreground text-sm',
       },
     },

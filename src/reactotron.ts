@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Reactotron from 'reactotron-react-native';
 
 type ApiRequestPayload = {
@@ -36,8 +35,7 @@ export const reactotronLoggers: ReactotronLoggers = {
 };
 
 export const reactotron = __DEV__
-  ? Reactotron.setAsyncStorageHandler(AsyncStorage)
-      .configure({ name: 'dokploy-mobile' })
+  ? Reactotron.configure({ name: 'dokploy-mobile' })
       .useReactNative({
         networking: {
           ignoreUrls: /symbolicate/,
