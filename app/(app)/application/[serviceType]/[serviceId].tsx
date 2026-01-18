@@ -1,11 +1,17 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import useSWR from 'swr';
+import { io, type Socket } from 'socket.io-client';
 
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { fetchApplication, type ServiceType } from '@/src/api/applications';
+import {
+  fetchApplication,
+  fetchContainersByAppNameMatch,
+  type ContainerInfo,
+  type ServiceType,
+} from '@/src/api/applications';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -16,7 +22,9 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Icon } from '@/src/components/ui/icon';
+import { Input } from '@/src/components/ui/input';
 import { Text } from '@/src/components/ui/text';
+import { useAuthStore } from '@/src/store/auth.temp';
 import { Ban, RefreshCw, RocketIcon } from 'lucide-react-native';
 
 type Deployment = {
@@ -28,6 +36,55 @@ type Deployment = {
   startedAt?: string;
   finishedAt?: string;
   [key: string]: unknown;
+};
+
+type LogParams = {
+  tail: string;
+  since: string;
+  search: string;
+  runType: string;
+};
+
+const LOGS_ENDPOINT_BASE = 'wss://deployment.fazel.dev';
+const LOGS_ENDPOINT_PATH = '/docker-container-logs';
+const DEFAULT_LOG_PARAMS: LogParams = {
+  tail: '100',
+  since: 'all',
+  search: '',
+  runType: 'native',
+};
+
+const parseTail = (value: string) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+};
+
+const normalizeLogPayload = (payload: unknown): string[] => {
+  if (typeof payload === 'string') {
+    return [payload];
+  }
+  if (Array.isArray(payload)) {
+    return payload.filter((item) => typeof item === 'string') as string[];
+  }
+  if (payload && typeof payload === 'object') {
+    const record = payload as Record<string, unknown>;
+    const candidate =
+      record.message ?? record.log ?? record.data ?? record.line ?? record.stdout ?? record.stderr;
+    if (typeof candidate === 'string') {
+      return [candidate];
+    }
+  }
+  return [];
+};
+
+const formatSocketError = (error: unknown) => {
+  if (!error) return 'Failed to connect to log stream.';
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  return 'Failed to connect to log stream.';
 };
 
 const getDeploymentTitle = (deployment: Deployment) => {
@@ -92,6 +149,33 @@ const extractDeployments = (payload: unknown): Deployment[] => {
   return [];
 };
 
+const extractContainers = (payload: unknown): ContainerInfo[] => {
+  if (Array.isArray(payload)) {
+    return payload as ContainerInfo[];
+  }
+  if (!payload || typeof payload !== 'object') {
+    return [];
+  }
+  const record = payload as Record<string, unknown>;
+  if (Array.isArray(record.containers)) {
+    return record.containers as ContainerInfo[];
+  }
+  if (Array.isArray(record.data)) {
+    return record.data as ContainerInfo[];
+  }
+  return [];
+};
+
+const getContainerId = (containers: ContainerInfo[]) => {
+  for (const container of containers) {
+    const candidate = container.containerId ?? container.id;
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate;
+    }
+  }
+  return null;
+};
+
 export default function ApplicationDetailScreen() {
   const { serviceId, serviceType } = useLocalSearchParams<{
     serviceId?: string;
@@ -105,6 +189,16 @@ export default function ApplicationDetailScreen() {
   const tabs = useMemo(() => ['General', 'Logs', 'Monitoring', 'Deployments'] as const, []);
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('General');
   const [autoDeployEnabled, setAutoDeployEnabled] = useState(false);
+  const [logParamsDraft, setLogParamsDraft] = useState<LogParams>(DEFAULT_LOG_PARAMS);
+  const [logParamsApplied, setLogParamsApplied] = useState<LogParams>(DEFAULT_LOG_PARAMS);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<
+    'idle' | 'connecting' | 'connected' | 'disconnected' | 'error'
+  >('idle');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const pat = useAuthStore((state) => state.pat);
 
   const { data, error } = useSWR(
     normalizedServiceId && normalizedServiceType
@@ -112,16 +206,161 @@ export default function ApplicationDetailScreen() {
       : null,
     () => fetchApplication(normalizedServiceType as ServiceType, normalizedServiceId as string)
   );
+  const appName = useMemo(() => {
+    const record = data as { appName?: string; name?: string } | null;
+    const candidate = record?.appName ?? record?.name;
+    if (typeof candidate !== 'string') return null;
+    const trimmed = candidate.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }, [data]);
+  const { data: containerData, error: containerError } = useSWR(
+    activeTab === 'Logs' && appName ? `docker.containers:${appName}` : null,
+    () => fetchContainersByAppNameMatch(appName as string)
+  );
   const deployments = useMemo(() => extractDeployments(data), [data]);
+  const containers = useMemo(() => extractContainers(containerData), [containerData]);
+  const containerId = useMemo(() => getContainerId(containers), [containers]);
 
   useEffect(() => {
     if (data) {
-      console.log('service detail response', data);
     }
     if (error) {
       console.warn('service detail error', error);
     }
   }, [data, error]);
+
+  useEffect(() => {
+    if (!containerError) return;
+    setConnectionStatus('error');
+    setConnectionError('Failed to load container details.');
+  }, [containerError]);
+
+  useEffect(() => {
+    if (activeTab !== 'Logs') return;
+    if (!data) return;
+    if (!appName) {
+      setConnectionStatus('error');
+      setConnectionError('Application name is unavailable.');
+      return;
+    }
+    if (!containerId) {
+      setConnectionStatus('connecting');
+      setConnectionError(null);
+    }
+  }, [activeTab, appName, containerId, data]);
+
+  const disconnectSocket = useCallback(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+    socket.removeAllListeners();
+    socket.disconnect();
+    socketRef.current = null;
+    setConnectionStatus('disconnected');
+  }, []);
+
+  const connectSocket = useCallback(() => {
+    if (!containerId) {
+      setConnectionStatus('error');
+      setConnectionError('Container not found for this application.');
+      return;
+    }
+    if (!pat) {
+      setConnectionStatus('error');
+      setConnectionError('Missing personal access token.');
+      return;
+    }
+
+    const tailValue = parseTail(logParamsApplied.tail) ?? 100;
+    const query = {
+      containerId,
+      tail: tailValue.toString(),
+      since: logParamsApplied.since || 'all',
+      search: logParamsApplied.search ?? '',
+      runType: logParamsApplied.runType || 'native',
+    };
+
+    disconnectSocket();
+    setConnectionStatus('connecting');
+    setConnectionError(null);
+
+    const socket = io(LOGS_ENDPOINT_BASE, {
+      path: LOGS_ENDPOINT_PATH,
+      transports: ['websocket'],
+      query,
+      extraHeaders: {
+        'x-api-key': pat,
+      },
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      setConnectionStatus('connected');
+    });
+
+    socket.on('disconnect', () => {
+      setConnectionStatus('disconnected');
+    });
+
+    socket.on('connect_error', (err) => {
+      setConnectionStatus('error');
+      setConnectionError(formatSocketError(err));
+    });
+
+    socket.on('error', (err) => {
+      setConnectionStatus('error');
+      setConnectionError(formatSocketError(err));
+    });
+
+    const handlePayload = (payload: unknown) => {
+      const lines = normalizeLogPayload(payload);
+      if (lines.length === 0) return;
+      setLogs((prev) => {
+        const next = [...prev, ...lines];
+        return next.slice(-1000);
+      });
+    };
+
+    socket.on('message', handlePayload);
+    socket.on('log', handlePayload);
+    socket.on('data', handlePayload);
+    socket.on('stdout', handlePayload);
+    socket.on('stderr', handlePayload);
+  }, [containerId, disconnectSocket, logParamsApplied, pat]);
+
+  useEffect(() => {
+    if (activeTab !== 'Logs') {
+      disconnectSocket();
+      return;
+    }
+    if (!containerId) return;
+    connectSocket();
+    return () => disconnectSocket();
+  }, [activeTab, connectSocket, containerId, disconnectSocket]);
+
+  useEffect(() => {
+    if (logs.length === 0) return;
+    scrollRef.current?.scrollToEnd({ animated: false });
+  }, [logs.length]);
+
+  const tailValidationError = useMemo(() => {
+    if (logParamsDraft.tail.trim().length === 0) {
+      return 'Tail is required.';
+    }
+    if (!parseTail(logParamsDraft.tail)) {
+      return 'Tail must be a positive number.';
+    }
+    return null;
+  }, [logParamsDraft.tail]);
+
+  const applyLogParams = () => {
+    if (tailValidationError) {
+      setConnectionError(tailValidationError);
+      return;
+    }
+    setLogs([]);
+    setLogParamsApplied({ ...logParamsDraft });
+  };
 
   return (
     <View className="bg-background flex-1 px-5 pt-5">
@@ -176,6 +415,134 @@ export default function ApplicationDetailScreen() {
                   <Switch checked={autoDeployEnabled} onCheckedChange={setAutoDeployEnabled} />
                 </View>
               </View>
+            ) : tab === 'Logs' ? (
+              <Card className="border-dashed">
+                <CardHeader>
+                  <CardTitle>Logs</CardTitle>
+                  <CardDescription>
+                    {normalizedServiceId
+                      ? `Streaming logs for ${normalizedServiceId}.`
+                      : 'Select a service to view logs.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="gap-4">
+                  <View className="border-border rounded-md border px-3 py-2">
+                    <Text className="text-muted-foreground text-xs">Connection</Text>
+                    <Text className="text-foreground text-sm font-medium">
+                      {connectionStatus === 'connecting'
+                        ? 'Connecting'
+                        : connectionStatus === 'connected'
+                          ? 'Connected'
+                          : connectionStatus === 'error'
+                            ? 'Error'
+                            : connectionStatus === 'disconnected'
+                              ? 'Disconnected'
+                              : 'Idle'}
+                    </Text>
+                    {connectionError ? (
+                      <Text className="text-destructive text-xs">{connectionError}</Text>
+                    ) : null}
+                  </View>
+
+                  <View className="gap-3">
+                    <View className="flex-row flex-wrap gap-3">
+                      <View className="min-w-[120px] flex-1">
+                        <Text className="text-muted-foreground text-xs">Tail</Text>
+                        <Input
+                          value={logParamsDraft.tail}
+                          onChangeText={(value) =>
+                            setLogParamsDraft((prev) => ({ ...prev, tail: value }))
+                          }
+                          keyboardType="number-pad"
+                          className="text-sm"
+                          placeholder="100"
+                        />
+                      </View>
+                      <View className="min-w-[120px] flex-1">
+                        <Text className="text-muted-foreground text-xs">Since</Text>
+                        <Input
+                          value={logParamsDraft.since}
+                          onChangeText={(value) =>
+                            setLogParamsDraft((prev) => ({ ...prev, since: value }))
+                          }
+                          className="text-sm"
+                          placeholder="all"
+                        />
+                      </View>
+                    </View>
+                    <View className="flex-row flex-wrap gap-3">
+                      <View className="min-w-[160px] flex-1">
+                        <Text className="text-muted-foreground text-xs">Search</Text>
+                        <Input
+                          value={logParamsDraft.search}
+                          onChangeText={(value) =>
+                            setLogParamsDraft((prev) => ({ ...prev, search: value }))
+                          }
+                          className="text-sm"
+                          placeholder="Optional filter"
+                        />
+                      </View>
+                      <View className="min-w-[120px] flex-1">
+                        <Text className="text-muted-foreground text-xs">Run Type</Text>
+                        <Input
+                          value={logParamsDraft.runType}
+                          onChangeText={(value) =>
+                            setLogParamsDraft((prev) => ({ ...prev, runType: value }))
+                          }
+                          className="text-sm"
+                          placeholder="native"
+                        />
+                      </View>
+                    </View>
+                    {tailValidationError ? (
+                      <Text className="text-destructive text-xs">{tailValidationError}</Text>
+                    ) : null}
+                    <View className="flex-row flex-wrap gap-2">
+                      <Button onPress={applyLogParams}>
+                        <Text>Apply & Reconnect</Text>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onPress={() => {
+                          disconnectSocket();
+                          setConnectionStatus('disconnected');
+                        }}>
+                        <Text>Disconnect</Text>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onPress={() => {
+                          setLogs([]);
+                        }}>
+                        <Text>Clear Logs</Text>
+                      </Button>
+                    </View>
+                  </View>
+
+                  <View className="border-border bg-muted/30 min-h-60 rounded-md border">
+                    {logs.length === 0 ? (
+                      <View className="px-3 py-4">
+                        <Text className="text-muted-foreground text-xs">
+                          No log output yet.
+                        </Text>
+                      </View>
+                    ) : (
+                      <ScrollView
+                        ref={scrollRef}
+                        contentContainerStyle={{ padding: 12 }}
+                        showsVerticalScrollIndicator>
+                        {logs.map((line, index) => (
+                          <Text
+                            key={`${index}-${line}`}
+                            className="text-foreground text-xs font-mono">
+                            {line}
+                          </Text>
+                        ))}
+                      </ScrollView>
+                    )}
+                  </View>
+                </CardContent>
+              </Card>
             ) : (
               <Card className="border-dashed">
                 <CardHeader>

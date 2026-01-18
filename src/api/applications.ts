@@ -10,6 +10,12 @@ export type ApplicationDetail = {
 };
 
 export type ServiceType = 'postgres' | 'mysql' | 'mariadb' | 'mongo' | 'redis' | 'compose';
+export type ContainerInfo = {
+  id?: string;
+  containerId?: string;
+  name?: string;
+  [key: string]: unknown;
+};
 
 const withPatHeader = (config?: AxiosRequestConfig<any>): AxiosRequestConfig<any> | undefined => {
   const storedPat = patStorage.getString(PAT_STORAGE_KEY);
@@ -44,4 +50,20 @@ export function fetchApplication(
   const { endpoint, paramKey } = serviceRequestConfig[serviceType];
 
   return getRequest<ApplicationDetail>(endpoint, { [paramKey]: serviceId }, withPatHeader(config));
+}
+
+export function fetchContainersByAppNameMatch(
+  appName: string,
+  serverId?: string | null,
+  config?: AxiosRequestConfig<any>
+) {
+  return getRequest<ContainerInfo[] | { containers?: ContainerInfo[] }>(
+    'docker.getContainersByAppNameMatch',
+    {
+      appType: 'stack',
+      appName,
+      ...(serverId ? { serverId } : {}),
+    },
+    withPatHeader(config)
+  );
 }
