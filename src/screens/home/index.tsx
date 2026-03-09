@@ -6,16 +6,18 @@ import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
 import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
+import { useAuthStore } from '@/store/auth-store';
 
 const LOGO = {
-  light: require('@/assets/images/react-native-reusables-light.png'),
-  dark: require('@/assets/images/react-native-reusables-dark.png'),
+  light: require('../../../assets/images/react-native-reusables-light.png'),
+  dark: require('../../../assets/images/react-native-reusables-dark.png'),
 };
 
 const SCREEN_OPTIONS = {
   title: 'React Native Reusables',
   headerTransparent: true,
   headerRight: () => <ThemeToggle />,
+  headerShown: true,
 };
 
 const IMAGE_STYLE: ImageStyle = {
@@ -23,14 +25,20 @@ const IMAGE_STYLE: ImageStyle = {
   width: 76,
 };
 
-export default function Screen() {
+export default function HomeScreen() {
   const { theme } = useUniwind();
+  const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+  const logout = useAuthStore((state) => state.logout);
+
+  const handleLogout = React.useCallback(async () => {
+    await logout();
+  }, [logout]);
 
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
       <View className="flex-1 items-center justify-center gap-8 p-4">
-        <Image source={LOGO[theme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
+        <Image source={LOGO[resolvedTheme]} style={IMAGE_STYLE} resizeMode="contain" />
         <View className="gap-2 p-4">
           <Text className="ios:text-foreground text-muted-foreground font-mono text-sm">
             1. Edit <Text variant="code">app/index.tsx</Text> to get started.
@@ -40,11 +48,9 @@ export default function Screen() {
           </Text>
         </View>
         <View className="flex-row gap-2">
-          <Link href="https://reactnativereusables.com" asChild>
-            <Button>
-              <Text>Browse the Docs</Text>
-            </Button>
-          </Link>
+          <Button onPress={handleLogout}>
+            <Text>Logout</Text>
+          </Button>
           <Link href="https://github.com/founded-labs/react-native-reusables" asChild>
             <Button variant="ghost">
               <Text>Star the Repo</Text>
@@ -64,9 +70,10 @@ const THEME_ICONS = {
 
 function ThemeToggle() {
   const { theme } = useUniwind();
+  const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
 
   function toggleTheme() {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    const newTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
     Uniwind.setTheme(newTheme);
   }
 
@@ -76,7 +83,7 @@ function ThemeToggle() {
       size="icon"
       variant="ghost"
       className="ios:size-9 web:mx-4 rounded-full">
-      <Icon as={THEME_ICONS[theme ?? 'light']} className="size-5" />
+      <Icon as={THEME_ICONS[resolvedTheme]} className="size-5" />
     </Button>
   );
 }
