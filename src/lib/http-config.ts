@@ -8,6 +8,7 @@ const storage = createMMKV({
 const SERVER_URL_KEY = 'dokploy_server_url';
 const PAT_KEY = 'dokploy_pat';
 
+// Non-sensitive endpoint config in MMKV, sensitive token in secure storage.
 let serverUrlCache: string | null | undefined;
 let patCache: string | null = null;
 
@@ -31,7 +32,7 @@ export async function initHttpConfig(): Promise<void> {
   const storedUrl = storage.getString(SERVER_URL_KEY);
   serverUrlCache = normalizeServerUrl(storedUrl);
 
-  try {
+  try { 
     patCache = await SecureStore.getItemAsync(PAT_KEY);
   } catch {
     patCache = null;
@@ -58,6 +59,11 @@ export function setServerUrl(url: string): string {
   return normalized;
 }
 
+export function clearServerUrl(): void {
+  serverUrlCache = null;
+  storage.set(SERVER_URL_KEY, '');
+}
+
 export function getPat(): string | null {
   return patCache ?? null;
 }
@@ -77,4 +83,9 @@ export async function setPat(pat: string | null): Promise<void> {
   } catch {
     // No-op: treat missing key as cleared.
   }
+}
+
+export async function clearCredentials(): Promise<void> {
+  clearServerUrl();
+  await setPat(null);
 }

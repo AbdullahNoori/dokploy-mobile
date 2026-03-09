@@ -32,3 +32,21 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error?.response?.status;
+
+    if (status === 401 || status === 403) {
+      try {
+        const { useAuthStore } = await import('@/store/auth-store');
+        await useAuthStore.getState().handleUnauthorized();
+      } catch {
+        // No-op: preserve original network error if unauthorized handling fails.
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
