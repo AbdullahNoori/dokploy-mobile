@@ -1,0 +1,42 @@
+import { memo } from 'react';
+import { View } from 'react-native';
+
+import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
+import { formatRelativeTime } from '@/lib/utils';
+import type { ProjectApplication } from '@/types/projects';
+import { GlobeIcon } from 'lucide-react-native';
+
+type Props = {
+  application: ProjectApplication;
+};
+
+const STATUS_CLASS: Record<string, string> = {
+  done: 'bg-emerald-500',
+  error: 'bg-rose-500',
+  failed: 'bg-rose-500',
+  running: 'bg-amber-500',
+  pending: 'bg-amber-500',
+};
+
+export const ApplicationsCard = memo(function ApplicationsCard({
+  application,
+}: Props) {
+  const statusClass =
+    STATUS_CLASS[application.applicationStatus] ?? 'bg-muted-foreground/40';
+
+  return (
+    <View className="bg-card border-border/80 rounded-2xl border px-4 py-4">
+      <View className="flex-row items-center justify-between">
+        <Text className="text-base font-semibold">{application.name}</Text>
+        <View className="flex-row items-center gap-3">
+          <Icon as={GlobeIcon} className="text-muted-foreground size-5" />
+          <View className={`h-3 w-3 rounded-full ${statusClass}`} />
+        </View>
+      </View>
+      <Text variant="muted" className="mt-2">
+        {formatRelativeTime(application.createdAt)}
+      </Text>
+    </View>
+  );
+});

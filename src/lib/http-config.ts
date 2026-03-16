@@ -24,8 +24,13 @@ export function normalizeServerUrl(input: string | null | undefined): string | n
 
   const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed);
   const withScheme = hasScheme ? trimmed : `https://${trimmed}`;
+  const withoutTrailingSlashes = withScheme.replace(/\/+$/, '');
 
-  return withScheme.replace(/\/+$/, '');
+  if (withoutTrailingSlashes.endsWith('/api')) {
+    return withoutTrailingSlashes;
+  }
+
+  return `${withoutTrailingSlashes}/api`;
 }
 
 export async function initHttpConfig(): Promise<void> {

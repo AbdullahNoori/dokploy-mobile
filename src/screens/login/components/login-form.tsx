@@ -1,11 +1,20 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { EyeIcon, EyeOffIcon, ShieldCheckIcon } from 'lucide-react-native';
+import DokployLogoDark from '@/assets/logo/dokploy-dark.svg';
+import DokployLogo from '@/assets/logo/dokploy.svg';
+import { THEME } from '@/lib/theme';
+import { useUniwind } from 'uniwind';
 
 type LoginFormProps = {
   serverUrl: string;
@@ -25,6 +34,9 @@ export default function LoginForm({
   onSubmit,
 }: LoginFormProps) {
   const [isPatVisible, setIsPatVisible] = useState(false);
+  const { theme } = useUniwind();
+  const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+  const Logo = resolvedTheme === 'dark' ? DokployLogoDark : DokployLogo;
 
   return (
     <KeyboardAvoidingView
@@ -35,18 +47,16 @@ export default function LoginForm({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <View className="mx-auto w-full max-w-md gap-6">
-          <View className="items-center gap-4">
-            <View className="bg-secondary h-12 w-12 items-center justify-center rounded-full">
-              <Icon as={ShieldCheckIcon} className="text-foreground size-6" />
-            </View>
-            <View className="items-center gap-2">
+          <View className="items-center gap-3">
+            <View className="flex-row items-center gap-3">
+              <Logo width={40} height={40} />
               <Text variant="h3" className="text-center">
                 Sign in
               </Text>
-              <Text variant="muted" className="text-center">
-                Enter your server URL and personal access token to sign in
-              </Text>
             </View>
+            <Text variant="muted" className="text-center">
+              Enter your server URL and personal access token to sign in
+            </Text>
           </View>
 
           <View className="gap-4">
@@ -87,9 +97,13 @@ export default function LoginForm({
             <Button
               onPress={onSubmit}
               disabled={isSubmitting}
-              // className="h-12 rounded-lg"
+              className="h-12 rounded-lg"
               variant={'default'}>
-              <Text>{isSubmitting ? 'Logging in...' : 'Login'}</Text>
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={THEME[resolvedTheme].primaryForeground} />
+              ) : (
+                <Text>Login</Text>
+              )}
             </Button>
           </View>
         </View>

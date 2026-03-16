@@ -10,14 +10,14 @@ export type VerifyCredentialsPayload = {
 
 export function useVerifyCredentials(payload?: VerifyCredentialsPayload) {
   const fetcher = () =>
-    getRequest<ProjectAllResponse>('project.all', undefined, {
+    getRequest<ProjectAllResponse>('project/all', undefined, {
       baseURL: payload?.baseURL,
       headers: {
         'x-api-key': payload?.apiKey ?? '',
       },
     });
 
-  return useSWR<ProjectAllResponse>('project.all', fetcher, {
+  return useSWR<ProjectAllResponse>('project/all', fetcher, {
     shouldRetryOnError: false,
   });
 }

@@ -49,7 +49,7 @@ export default function RootLayout() {
         <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={status === 'signedIn'}>
-            <Stack.Screen name="(app)" />
+            <Stack.Screen name="(app)" options={{ headerShown: false }} />
           </Stack.Protected>
 
           <Stack.Protected guard={status === 'signedOut'}>
@@ -59,7 +59,7 @@ export default function RootLayout() {
           <Stack.Screen name="+not-found" />
         </Stack>
         <PortalHost />
-        <Toaster />
+        <Toaster richColors />
       </ThemeProvider>
     </GestureHandlerRootView>
   );
