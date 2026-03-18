@@ -4,11 +4,11 @@ import { View } from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { formatRelativeTime } from '@/lib/utils';
-import type { ProjectApplication } from '@/types/projects';
+import type { ProjectItem } from '@/types/projects';
 import { GlobeIcon } from 'lucide-react-native';
 
 type Props = {
-  application: ProjectApplication;
+  application: ProjectItem;
 };
 
 const STATUS_CLASS: Record<string, string> = {
@@ -23,7 +23,7 @@ export const ApplicationsCard = memo(function ApplicationsCard({
   application,
 }: Props) {
   const statusClass =
-    STATUS_CLASS[application.applicationStatus] ?? 'bg-muted-foreground/40';
+    STATUS_CLASS[application.status ?? ''] ?? 'bg-muted-foreground/40';
 
   return (
     <View className="bg-card border-border/80 rounded-2xl border px-4 py-4">

@@ -4,7 +4,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { useProjectDetailScreen } from '@/hooks/use-project-detail-screen';
-import type { ProjectApplication } from '@/types/projects';
+import type { ProjectItem } from '@/types/projects';
 
 import { ApplicationsCard } from './components/applications-card';
 import { ProjectDetailEmptyState } from './components/project-detail-empty';
@@ -15,19 +15,19 @@ const CARD_HEIGHT = 92;
 
 export default function ProjectDetailScreen() {
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
-  const { project, applications, isLoading, isError, retry } = useProjectDetailScreen(
+  const { project, items, isLoading, isError, retry } = useProjectDetailScreen(
     projectId ?? ''
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: ProjectApplication }) => <ApplicationsCard application={item} />,
+    ({ item }: { item: ProjectItem }) => <ApplicationsCard application={item} />,
     []
   );
 
-  const keyExtractor = useCallback((item: ProjectApplication) => item.applicationId, []);
+  const keyExtractor = useCallback((item: ProjectItem) => item.id, []);
 
   const getItemLayout = useCallback(
-    (_: ArrayLike<ProjectApplication> | null | undefined, index: number) => ({
+    (_: ArrayLike<ProjectItem> | null | undefined, index: number) => ({
       length: CARD_HEIGHT + 12,
       offset: (CARD_HEIGHT + 12) * index,
       index,
@@ -43,7 +43,7 @@ export default function ProjectDetailScreen() {
     return <ProjectDetailErrorState onRetry={retry} />;
   }
 
-  if (!applications.length) {
+  if (!items.length) {
     return <ProjectDetailEmptyState />;
   }
 
@@ -52,7 +52,7 @@ export default function ProjectDetailScreen() {
       <Stack.Screen options={{ title: project?.name ?? 'Project' }} />
       <View className="flex-1 pt-2">
         <FlatList
-          data={applications}
+          data={items}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
