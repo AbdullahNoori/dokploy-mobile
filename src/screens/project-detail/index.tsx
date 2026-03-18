@@ -20,8 +20,10 @@ export default function ProjectDetailScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: ProjectItem }) => <ApplicationsCard application={item} />,
-    []
+    ({ item }: { item: ProjectItem }) => (
+      <ApplicationsCard application={item} projectId={projectId ?? ''} />
+    ),
+    [projectId]
   );
 
   const keyExtractor = useCallback((item: ProjectItem) => item.id, []);
