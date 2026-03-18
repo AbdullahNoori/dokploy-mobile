@@ -1,0 +1,86 @@
+import { useMemo, useState } from 'react';
+import { ScrollView, View } from 'react-native';
+import { Stack, useLocalSearchParams } from 'expo-router';
+
+import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { Text } from '@/components/ui/text';
+import { useItemDetailScreen } from '@/hooks/use-item-detail-screen';
+import type { ProjectItemType } from '@/types/projects';
+
+import { ItemDetailActions } from './components/item-detail-actions';
+import { ItemDetailDeployments } from './components/item-detail-deployments';
+import { ItemDetailEmptyState } from './components/item-detail-empty';
+import { ItemDetailErrorState } from './components/item-detail-error';
+import { ItemDetailGeneral } from './components/item-detail-general';
+import { ItemDetailSkeleton } from './components/item-detail-skeleton';
+import { ItemDetailTabs, type TabKey } from './components/item-detail-tabs';
+
+export default function ItemDetailScreen() {
+  const { itemId, itemType } = useLocalSearchParams<{
+    itemId: string;
+    itemType?: ProjectItemType;
+  }>();
+
+  const [activeTab, setActiveTab] = useState<TabKey>('general');
+
+  const normalizedType = useMemo(() => {
+    if (!itemType) return undefined;
+    return itemType as ProjectItemType;
+  }, [itemType]);
+
+  const { summary, details, deployments, isApplication, isLoading, isError, retry } =
+    useItemDetailScreen(normalizedType, itemId);
+
+  if (!itemId || !normalizedType) {
+    return (
+      <SafeAreaView className="bg-background flex-1 px-4">
+        <View className="flex-1 items-center justify-center">
+          <Text variant="h4">Missing item information</Text>
+          <Text variant="muted" className="mt-2 text-center">
+            Please return to the project list and select an item again.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isLoading) {
+    return <ItemDetailSkeleton />;
+  }
+
+  if (isError) {
+    return <ItemDetailErrorState onRetry={retry} />;
+  }
+
+  return (
+    <SafeAreaView className="bg-background flex-1 px-4 pt-2" edges={['left', 'right']}>
+      <Stack.Screen options={{ title: summary?.title ?? 'Service' }} />
+      <ScrollView showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="automatic">
+        <ItemDetailActions />
+        <ItemDetailTabs value={activeTab} onChange={setActiveTab} />
+
+        {activeTab === 'general' ? <ItemDetailGeneral summary={summary} details={details} /> : null}
+
+        {activeTab === 'logs' ? (
+          <ItemDetailEmptyState
+            title="Logs"
+            description="Logs will appear here once they are available."
+          />
+        ) : null}
+
+        {activeTab === 'deployments' ? (
+          isApplication ? (
+            <ItemDetailDeployments deployments={deployments} />
+          ) : (
+            <ItemDetailEmptyState
+              title="Deployments"
+              description="No deployments available for this service."
+            />
+          )
+        ) : null}
+
+        <View className="h-10" />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
