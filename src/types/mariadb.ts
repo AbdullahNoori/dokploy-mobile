@@ -1,0 +1,26 @@
+import type { models } from '@/types/error';
+
+export type MariadbOneResponseBody = {
+  mariadbId: string;
+  name: string;
+  appName: string;
+  applicationStatus: string;
+  dockerImage: string;
+  externalPort: number | null;
+  replicas: number;
+  memoryLimit: string | null;
+  cpuLimit: string | null;
+  env: string | null;
+  createdAt: string;
+  environment: {
+    name: string;
+    project?: {
+      name: string;
+    };
+  };
+  server: {
+    name: string;
+  } | null;
+};
+
+export type MariadbOneResponse = MariadbOneResponseBody | models.ErrorT;
