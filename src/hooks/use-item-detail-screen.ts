@@ -152,14 +152,28 @@ export function useItemDetailScreen(
   const deployments = useMemo<DeploymentRow[]>(() => {
     if (!detailData || itemType !== 'application') return [];
     const app = detailData as ApplicationOneResponseBody;
-    return (app.deployments ?? []).map((deployment) => ({
-      id: deployment.deploymentId,
-      title: deployment.title,
-      status: deployment.status ?? null,
-      createdAt: deployment.createdAt,
-      startedAt: deployment.startedAt ?? null,
-      finishedAt: deployment.finishedAt ?? null,
-    }));
+    return (app.deployments ?? [])
+      .map((deployment) => ({
+        id: deployment.deploymentId,
+        title: deployment.title,
+        status: deployment.status ?? null,
+        createdAt: deployment.createdAt,
+        startedAt: deployment.startedAt ?? null,
+        finishedAt: deployment.finishedAt ?? null,
+      }))
+      .sort((a, b) => {
+        const statusA = a.status ?? '';
+        const statusB = b.status ?? '';
+        const isRunningA = statusA.toLowerCase() === 'running';
+        const isRunningB = statusB.toLowerCase() === 'running';
+        if (isRunningA !== isRunningB) return isRunningA ? -1 : 1;
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        if (!Number.isNaN(timeA) && !Number.isNaN(timeB)) {
+          return timeB - timeA;
+        }
+        return 0;
+      });
   }, [detailData, itemType]);
 
   const retry = useCallback(() => {
