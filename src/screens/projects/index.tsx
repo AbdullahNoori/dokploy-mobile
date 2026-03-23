@@ -1,9 +1,11 @@
-import { useCallback, useMemo } from 'react';
-import { FlatList, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, RefreshControl, View } from 'react-native';
+import { useUniwind } from 'uniwind';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { useProjectsScreen } from '@/hooks/use-projects-screen';
 import type { ProjectAllResponseBody } from '@/types/projects';
+import { THEME } from '@/lib/theme';
 import { Stack } from 'expo-router';
 
 import { ProjectsCard } from './components/projects-card';
@@ -15,6 +17,9 @@ import { ProjectsSkeleton } from './components/projects-skeleton';
 const CARD_HEIGHT = 96;
 
 export default function ProjectsScreen() {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { theme } = useUniwind();
+  const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const {
     query,
     setQuery,
@@ -42,6 +47,16 @@ export default function ProjectsScreen() {
     }),
     []
   );
+
+  const onRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await retry();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, retry]);
 
   const listHeader = useMemo(
     () => (
@@ -82,6 +97,14 @@ export default function ProjectsScreen() {
           contentInsetAdjustmentBehavior="automatic"
           contentContainerClassName="gap-3 py-4"
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={THEME[resolvedTheme].primary}
+              colors={[THEME[resolvedTheme].primary]}
+            />
+          }
         />
       </View>
     </SafeAreaView>

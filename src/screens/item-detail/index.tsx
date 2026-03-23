@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { useUniwind } from 'uniwind';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Text } from '@/components/ui/text';
 import { useItemDetailScreen } from '@/hooks/use-item-detail-screen';
 import type { ProjectItemType } from '@/types/projects';
+import type { ApplicationOneResponseBody } from '@/types/application';
+import { THEME } from '@/lib/theme';
 
 import { ItemDetailActions } from './components/item-detail-actions';
 import { ItemDetailDeployments } from './components/item-detail-deployments';
@@ -22,14 +25,36 @@ export default function ItemDetailScreen() {
   }>();
 
   const [activeTab, setActiveTab] = useState<TabKey>('general');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { theme } = useUniwind();
+  const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
 
   const normalizedType = useMemo(() => {
     if (!itemType) return undefined;
     return itemType as ProjectItemType;
   }, [itemType]);
 
-  const { summary, details, deployments, isApplication, isLoading, isError, retry } =
+  const { data, summary, details, deployments, isApplication, isLoading, isError, retry } =
     useItemDetailScreen(normalizedType, itemId);
+
+  const application = isApplication
+    ? (data as ApplicationOneResponseBody | null)
+    : null;
+
+  const onRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await retry();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, retry]);
+  const isDeploymentRunning = isApplication
+    ? deployments.some(
+        (deployment) => (deployment.status ?? '').toLowerCase() === 'running'
+      )
+    : false;
 
   if (!itemId || !normalizedType) {
     return (
@@ -55,8 +80,24 @@ export default function ItemDetailScreen() {
   return (
     <SafeAreaView className="bg-background flex-1 px-4 pt-2" edges={['left', 'right']}>
       <Stack.Screen options={{ title: summary?.title ?? 'Service' }} />
-      <ScrollView showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="automatic">
-        <ItemDetailActions />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={THEME[resolvedTheme].primary}
+            colors={[THEME[resolvedTheme].primary]}
+          />
+        }>
+        <ItemDetailActions
+          isApplication={isApplication}
+          applicationId={application?.applicationId}
+          appName={application?.appName}
+          isDeploymentRunning={isDeploymentRunning}
+          onRefresh={retry}
+        />
         <ItemDetailTabs value={activeTab} onChange={setActiveTab} />
 
         {activeTab === 'general' ? <ItemDetailGeneral summary={summary} details={details} /> : null}

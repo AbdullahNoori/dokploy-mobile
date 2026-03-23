@@ -15,7 +15,7 @@ type ProjectsScreenState = {
   isLoading: boolean;
   isError: boolean;
   isEmpty: boolean;
-  retry: () => void;
+  retry: () => Promise<void>;
 };
 
 export function useProjectsScreen(): ProjectsScreenState {
@@ -53,8 +53,8 @@ export function useProjectsScreen(): ProjectsScreenState {
     setSortOrder((prev) => (prev === 'newest' ? 'oldest' : 'newest'));
   }, []);
 
-  const retry = useCallback(() => {
-    void mutate();
+  const retry = useCallback(async () => {
+    await mutate();
   }, [mutate]);
 
   const hasError = Boolean(error) || isErrorResponse(data);

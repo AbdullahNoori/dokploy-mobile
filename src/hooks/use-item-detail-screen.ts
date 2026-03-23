@@ -56,7 +56,7 @@ type ItemDetailState = {
   isApplication: boolean;
   isLoading: boolean;
   isError: boolean;
-  retry: () => void;
+  retry: () => Promise<void>;
 };
 
 const toDetailValue = (value: unknown) => {
@@ -176,9 +176,9 @@ export function useItemDetailScreen(
       });
   }, [detailData, itemType]);
 
-  const retry = useCallback(() => {
+  const retry = useCallback(async () => {
     if (mutate) {
-      void mutate();
+      await mutate();
     }
   }, [mutate]);
 
