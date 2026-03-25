@@ -120,6 +120,20 @@ export default function ItemDetailScreen() {
           )
         ) : null}
 
+        {activeTab === 'environment' ? (
+          <ItemDetailEmptyState
+            title="Environment"
+            description="Environment details will appear here once they are available."
+          />
+        ) : null}
+
+        {activeTab === 'domain' ? (
+          <ItemDetailEmptyState
+            title="Domain"
+            description="Domain details will appear here once they are available."
+          />
+        ) : null}
+
         <View className="h-10" />
       </ScrollView>
     </SafeAreaView>
