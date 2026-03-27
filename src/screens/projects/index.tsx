@@ -97,6 +97,7 @@ export default function ProjectsScreen() {
           contentInsetAdjustmentBehavior="automatic"
           contentContainerClassName="gap-3 py-4"
           showsVerticalScrollIndicator={false}
+          fadingEdgeLength={2.5}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

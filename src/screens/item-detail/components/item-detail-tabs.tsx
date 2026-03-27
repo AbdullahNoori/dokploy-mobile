@@ -20,11 +20,16 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 
 export function ItemDetailTabs({ value, onChange }: Props) {
   return (
-    <View className="bg-card border-border/80 mt-5 rounded-xl border">
+    <View className="bg-card border-border/80 mt-5 overflow-hidden rounded-xl border">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ padding: 4, flexDirection: 'row', alignItems: 'center' }}>
+        contentContainerStyle={{
+          padding: 4,
+          paddingRight: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+        }}>
         {TABS.map((tab) => {
           const isActive = value === tab.key;
           return (
@@ -32,7 +37,7 @@ export function ItemDetailTabs({ value, onChange }: Props) {
               key={tab.key}
               onPress={() => onChange(tab.key)}
               className={cn(
-                'mr-2 min-w-[110px] flex-none items-center rounded-lg px-3 py-2',
+                'mr-2 min-w-27.5 flex-none items-center rounded-lg px-3 py-2',
                 isActive ? 'bg-background' : 'opacity-60'
               )}>
               <Text

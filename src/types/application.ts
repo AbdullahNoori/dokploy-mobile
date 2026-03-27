@@ -9,6 +9,34 @@ export type ApplicationOneDeployment = {
   finishedAt: string | null;
 };
 
+export type ApplicationOnePort = {
+  applicationId: string;
+  portId: string;
+  protocol: 'tcp' | 'udp';
+  publishMode: 'ingress' | 'host';
+  publishedPort: number;
+  targetPort: number;
+};
+
+export type ApplicationOneDomain = {
+  applicationId: string | null;
+  certificateType: 'letsencrypt' | 'none' | 'custom';
+  composeId: string | null;
+  createdAt: string;
+  customCertResolver: string | null;
+  domainId: string;
+  domainType: 'compose' | 'application' | 'preview' | null;
+  host: string;
+  https: boolean;
+  internalPath: string | null;
+  path: string | null;
+  port: number | null;
+  previewDeploymentId: string | null;
+  serviceName: string | null;
+  stripPath: boolean;
+  uniqueConfigKey: number;
+};
+
 export type ApplicationOneResponseBody = {
   applicationId?: string | undefined;
   name: string;
@@ -30,8 +58,8 @@ export type ApplicationOneResponseBody = {
   server?: {
     name: string;
   } | null;
-  ports?: Array<unknown>;
-  domains?: Array<unknown>;
+  ports?: Array<ApplicationOnePort>;
+  domains?: Array<ApplicationOneDomain>;
   deployments: Array<ApplicationOneDeployment>;
 };
 

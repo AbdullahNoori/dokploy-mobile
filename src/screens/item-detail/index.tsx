@@ -12,6 +12,7 @@ import { THEME } from '@/lib/theme';
 
 import { ItemDetailActions } from './components/item-detail-actions';
 import { ItemDetailDeployments } from './components/item-detail-deployments';
+import { ItemDetailDomains } from './components/item-detail-domains';
 import { ItemDetailEmptyState } from './components/item-detail-empty';
 import { ItemDetailErrorState } from './components/item-detail-error';
 import { ItemDetailGeneral } from './components/item-detail-general';
@@ -37,9 +38,9 @@ export default function ItemDetailScreen() {
   const { data, summary, details, deployments, isApplication, isLoading, isError, retry } =
     useItemDetailScreen(normalizedType, itemId);
 
-  const application = isApplication
-    ? (data as ApplicationOneResponseBody | null)
-    : null;
+  const application = isApplication ? (data as ApplicationOneResponseBody | null) : null;
+  const domains = application?.domains ?? [];
+  const ports = application?.ports ?? [];
 
   const onRefresh = useCallback(async () => {
     if (isRefreshing) return;
@@ -51,9 +52,7 @@ export default function ItemDetailScreen() {
     }
   }, [isRefreshing, retry]);
   const isDeploymentRunning = isApplication
-    ? deployments.some(
-        (deployment) => (deployment.status ?? '').toLowerCase() === 'running'
-      )
+    ? deployments.some((deployment) => (deployment.status ?? '').toLowerCase() === 'running')
     : false;
 
   if (!itemId || !normalizedType) {
@@ -128,9 +127,14 @@ export default function ItemDetailScreen() {
         ) : null}
 
         {activeTab === 'domain' ? (
-          <ItemDetailEmptyState
-            title="Domain"
-            description="Domain details will appear here once they are available."
+          <ItemDetailDomains
+            domains={domains}
+            ports={ports}
+            isApplication={isApplication}
+            applicationId={application?.applicationId}
+            itemId={itemId}
+            itemType={normalizedType ?? 'application'}
+            onRefresh={retry}
           />
         ) : null}
 
