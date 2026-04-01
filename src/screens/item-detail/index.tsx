@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useUniwind } from 'uniwind';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
@@ -13,6 +14,7 @@ import { THEME } from '@/lib/theme';
 import { ItemDetailActions } from './components/item-detail-actions';
 import { ItemDetailDeployments } from './components/item-detail-deployments';
 import { ItemDetailDomains } from './components/item-detail-domains';
+import { ItemDetailEnvironment } from './components/item-detail-environment';
 import { ItemDetailEmptyState } from './components/item-detail-empty';
 import { ItemDetailErrorState } from './components/item-detail-error';
 import { ItemDetailGeneral } from './components/item-detail-general';
@@ -29,6 +31,7 @@ export default function ItemDetailScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+  const headerHeight = useHeaderHeight();
 
   const normalizedType = useMemo(() => {
     if (!itemType) return undefined;
@@ -79,67 +82,76 @@ export default function ItemDetailScreen() {
   return (
     <SafeAreaView className="bg-background flex-1 px-4 pt-2" edges={['left', 'right']}>
       <Stack.Screen options={{ title: summary?.title ?? 'Service' }} />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="automatic"
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={THEME[resolvedTheme].primary}
-            colors={[THEME[resolvedTheme].primary]}
-          />
-        }>
-        <ItemDetailActions
-          isApplication={isApplication}
-          applicationId={application?.applicationId}
-          appName={application?.appName}
-          isDeploymentRunning={isDeploymentRunning}
-          onRefresh={retry}
-        />
-        <ItemDetailTabs value={activeTab} onChange={setActiveTab} />
-
-        {activeTab === 'general' ? <ItemDetailGeneral summary={summary} details={details} /> : null}
-
-        {activeTab === 'logs' ? (
-          <ItemDetailEmptyState
-            title="Logs"
-            description="Logs will appear here once they are available."
-          />
-        ) : null}
-
-        {activeTab === 'deployments' ? (
-          isApplication ? (
-            <ItemDetailDeployments deployments={deployments} />
-          ) : (
-            <ItemDetailEmptyState
-              title="Deployments"
-              description="No deployments available for this service."
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.select({ ios: 'padding', android: undefined })}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="automatic"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={THEME[resolvedTheme].primary}
+              colors={[THEME[resolvedTheme].primary]}
             />
-          )
-        ) : null}
-
-        {activeTab === 'environment' ? (
-          <ItemDetailEmptyState
-            title="Environment"
-            description="Environment details will appear here once they are available."
-          />
-        ) : null}
-
-        {activeTab === 'domain' ? (
-          <ItemDetailDomains
-            domains={domains}
-            ports={ports}
+          }>
+          <ItemDetailActions
             isApplication={isApplication}
             applicationId={application?.applicationId}
-            itemId={itemId}
-            itemType={normalizedType ?? 'application'}
+            appName={application?.appName}
+            isDeploymentRunning={isDeploymentRunning}
             onRefresh={retry}
           />
-        ) : null}
+          <ItemDetailTabs value={activeTab} onChange={setActiveTab} />
 
-        <View className="h-10" />
-      </ScrollView>
+          {activeTab === 'general' ? (
+            <ItemDetailGeneral summary={summary} details={details} />
+          ) : null}
+
+          {activeTab === 'logs' ? (
+            <ItemDetailEmptyState
+              title="Logs"
+              description="Logs will appear here once they are available."
+            />
+          ) : null}
+
+          {activeTab === 'deployments' ? (
+            isApplication ? (
+              <ItemDetailDeployments deployments={deployments} />
+            ) : (
+              <ItemDetailEmptyState
+                title="Deployments"
+                description="No deployments available for this service."
+              />
+            )
+          ) : null}
+
+          {activeTab === 'environment' ? (
+            <ItemDetailEnvironment
+              itemType={normalizedType ?? 'application'}
+              data={data}
+              onRefresh={retry}
+            />
+          ) : null}
+
+          {activeTab === 'domain' ? (
+            <ItemDetailDomains
+              domains={domains}
+              ports={ports}
+              isApplication={isApplication}
+              applicationId={application?.applicationId}
+              itemId={itemId}
+              itemType={normalizedType ?? 'application'}
+              onRefresh={retry}
+            />
+          ) : null}
+
+          <View className="h-10" />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

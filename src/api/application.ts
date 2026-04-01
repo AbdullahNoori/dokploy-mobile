@@ -9,6 +9,10 @@ import type {
   ApplicationStopRequest,
   ApplicationStopResponse,
 } from '@/types/application-actions';
+import type {
+  ApplicationSaveEnvironmentRequest,
+  ApplicationSaveEnvironmentResponse,
+} from '@/types/environment-actions';
 import { getRequest, postRequest } from '@/lib/http';
 
 export function useApplicationOne(applicationId: string | undefined) {
@@ -28,4 +32,8 @@ export function applicationRedeploy(payload: ApplicationRedeployRequest) {
 
 export function applicationStop(payload: ApplicationStopRequest) {
   return postRequest<ApplicationStopResponse>('application/stop', payload);
+}
+
+export function applicationSaveEnvironment(payload: ApplicationSaveEnvironmentRequest) {
+  return postRequest<ApplicationSaveEnvironmentResponse>('application/saveEnvironment', payload);
 }
