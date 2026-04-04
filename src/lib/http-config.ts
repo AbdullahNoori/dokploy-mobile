@@ -53,6 +53,26 @@ export function getServerUrl(): string | null {
   return serverUrlCache ?? null;
 }
 
+export function getWebSocketBaseUrl(): string | null {
+  const serverUrl = getServerUrl();
+
+  if (!serverUrl) {
+    return null;
+  }
+
+  const withoutApiSuffix = serverUrl.replace(/\/api$/, '');
+
+  if (withoutApiSuffix.startsWith('https://')) {
+    return `wss://${withoutApiSuffix.slice('https://'.length)}`;
+  }
+
+  if (withoutApiSuffix.startsWith('http://')) {
+    return `ws://${withoutApiSuffix.slice('http://'.length)}`;
+  }
+
+  return null;
+}
+
 export function setServerUrl(url: string): string {
   const normalized = normalizeServerUrl(url);
   if (!normalized) {

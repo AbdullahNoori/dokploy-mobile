@@ -4,11 +4,13 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useUniwind } from 'uniwind';
 
+import { useDockerContainersByAppNameMatch } from '@/api/docker';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Text } from '@/components/ui/text';
 import { useItemDetailScreen } from '@/hooks/use-item-detail-screen';
 import type { ProjectItemType } from '@/types/projects';
 import type { ApplicationOneResponseBody } from '@/types/application';
+import { isErrorResponse } from '@/lib/utils';
 import { THEME } from '@/lib/theme';
 
 import { ItemDetailActions } from './components/item-detail-actions';
@@ -18,6 +20,7 @@ import { ItemDetailEnvironment } from './components/item-detail-environment';
 import { ItemDetailEmptyState } from './components/item-detail-empty';
 import { ItemDetailErrorState } from './components/item-detail-error';
 import { ItemDetailGeneral } from './components/item-detail-general';
+import { ItemDetailLogs } from './components/item-detail-logs';
 import { ItemDetailSkeleton } from './components/item-detail-skeleton';
 import { ItemDetailTabs, type TabKey } from './components/item-detail-tabs';
 
@@ -38,22 +41,50 @@ export default function ItemDetailScreen() {
     return itemType as ProjectItemType;
   }, [itemType]);
 
-  const { data, summary, details, deployments, isApplication, isLoading, isError, retry } =
-    useItemDetailScreen(normalizedType, itemId);
+  const {
+    data,
+    summary,
+    details,
+    deployments,
+    logsLookupName,
+    logsLookupAppType,
+    logsLookupServerId,
+    isApplication,
+    isLoading,
+    isError,
+    retry,
+  } = useItemDetailScreen(normalizedType, itemId);
+
+  const dockerContainers = useDockerContainersByAppNameMatch({
+    appName: logsLookupName ?? '',
+    appType: logsLookupAppType,
+    serverId: logsLookupServerId,
+    enabled: activeTab === 'logs' && Boolean(logsLookupName),
+  });
 
   const application = isApplication ? (data as ApplicationOneResponseBody | null) : null;
   const domains = application?.domains ?? [];
   const ports = application?.ports ?? [];
+  const dockerContainerData =
+    dockerContainers.data && !isErrorResponse(dockerContainers.data) ? dockerContainers.data : null;
+  const dockerContainerError = dockerContainers.error
+    ? dockerContainers.error.message
+    : dockerContainers.data && isErrorResponse(dockerContainers.data)
+      ? (dockerContainers.data.message ?? dockerContainers.data.error)
+      : null;
 
   const onRefresh = useCallback(async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
     try {
       await retry();
+      if (activeTab === 'logs' && logsLookupName) {
+        await dockerContainers.mutate();
+      }
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, retry]);
+  }, [activeTab, dockerContainers, isRefreshing, logsLookupName, retry]);
   const isDeploymentRunning = isApplication
     ? deployments.some((deployment) => (deployment.status ?? '').toLowerCase() === 'running')
     : false;
@@ -112,15 +143,20 @@ export default function ItemDetailScreen() {
           ) : null}
 
           {activeTab === 'logs' ? (
-            <ItemDetailEmptyState
-              title="Logs"
-              description="Logs will appear here once they are available."
+            <ItemDetailLogs
+              hasLookupName={Boolean(logsLookupName)}
+              selectedContainerId={dockerContainerData?.containerIds?.[0]}
+              isLookupLoading={Boolean(dockerContainers.isLoading)}
+              lookupError={dockerContainerError}
+              onRetryLookup={() => {
+                void dockerContainers.mutate();
+              }}
             />
           ) : null}
 
           {activeTab === 'deployments' ? (
             isApplication ? (
-              <ItemDetailDeployments deployments={deployments} />
+              <ItemDetailDeployments deployments={deployments} itemId={itemId} />
             ) : (
               <ItemDetailEmptyState
                 title="Deployments"

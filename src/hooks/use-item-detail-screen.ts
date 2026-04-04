@@ -9,26 +9,41 @@ import { usePostgresOne } from '@/api/postgres';
 import { useRedisOne } from '@/api/redis';
 import { isErrorResponse } from '@/lib/utils';
 import type { ApplicationOneResponseBody } from '@/types/application';
-import type { ComposeOneResponse } from '@/types/compose';
-import type { MariadbOneResponse } from '@/types/mariadb';
-import type { MongoOneResponse } from '@/types/mongo';
-import type { MysqlOneResponse } from '@/types/mysql';
-import type { PostgresOneResponse } from '@/types/postgres';
-import type { RedisOneResponse } from '@/types/redis';
+import type { ComposeOneResponseBody } from '@/types/compose';
+import type { MariadbOneResponseBody } from '@/types/mariadb';
+import type { MongoOneResponseBody } from '@/types/mongo';
+import type { MysqlOneResponseBody } from '@/types/mysql';
+import type { PostgresOneResponseBody } from '@/types/postgres';
+import type { RedisOneResponseBody } from '@/types/redis';
 import type { ProjectItemType } from '@/types/projects';
+import type { DockerAppType } from '@/types/docker';
 
 type DetailRow = {
   label: string;
   value: string;
 };
 
-type DeploymentRow = {
+export type DeploymentRow = {
   id: string;
   title: string;
+  description: string | null;
   status: string | null;
+  logPath: string | null;
+  pid: string | null;
+  applicationId: string | null;
+  composeId: string | null;
+  serverId: string | null;
+  isPreviewDeployment: boolean;
+  previewDeploymentId: string | null;
   createdAt: string;
   startedAt: string | null;
   finishedAt: string | null;
+  errorMessage: string | null;
+  scheduleId: string | null;
+  backupId: string | null;
+  rollbackId: string | null;
+  volumeBackupId: string | null;
+  buildServerId: string | null;
 };
 
 type DetailSummary = {
@@ -41,18 +56,21 @@ type DetailSummary = {
 
 type ItemDetailData =
   | ApplicationOneResponseBody
-  | ComposeOneResponse
-  | MariadbOneResponse
-  | MongoOneResponse
-  | MysqlOneResponse
-  | PostgresOneResponse
-  | RedisOneResponse;
+  | ComposeOneResponseBody
+  | MariadbOneResponseBody
+  | MongoOneResponseBody
+  | MysqlOneResponseBody
+  | PostgresOneResponseBody
+  | RedisOneResponseBody;
 
 type ItemDetailState = {
   data: ItemDetailData | null;
   summary: DetailSummary | null;
   details: DetailRow[];
   deployments: DeploymentRow[];
+  logsLookupName: string | null;
+  logsLookupAppType: DockerAppType | undefined;
+  logsLookupServerId: string | undefined;
   isApplication: boolean;
   isLoading: boolean;
   isError: boolean;
@@ -156,10 +174,24 @@ export function useItemDetailScreen(
       .map((deployment) => ({
         id: deployment.deploymentId,
         title: deployment.title,
+        description: deployment.description ?? null,
         status: deployment.status ?? null,
+        logPath: deployment.logPath ?? null,
+        pid: deployment.pid ?? null,
+        applicationId: deployment.applicationId ?? null,
+        composeId: deployment.composeId ?? null,
+        serverId: deployment.serverId ?? null,
+        isPreviewDeployment: deployment.isPreviewDeployment ?? false,
+        previewDeploymentId: deployment.previewDeploymentId ?? null,
         createdAt: deployment.createdAt,
         startedAt: deployment.startedAt ?? null,
         finishedAt: deployment.finishedAt ?? null,
+        errorMessage: deployment.errorMessage ?? null,
+        scheduleId: deployment.scheduleId ?? null,
+        backupId: deployment.backupId ?? null,
+        rollbackId: deployment.rollbackId ?? null,
+        volumeBackupId: deployment.volumeBackupId ?? null,
+        buildServerId: deployment.buildServerId ?? null,
       }))
       .sort((a, b) => {
         const statusA = a.status ?? '';
@@ -176,6 +208,30 @@ export function useItemDetailScreen(
       });
   }, [detailData, itemType]);
 
+  const logsLookup = useMemo(() => {
+    if (!detailData || !itemType) {
+      return {
+        name: null,
+        appType: undefined,
+        serverId: undefined,
+      };
+    }
+
+    if (itemType === 'compose') {
+      return {
+        name: detailData.name ?? null,
+        appType: 'docker-compose' as const,
+        serverId: undefined,
+      };
+    }
+
+    return {
+      name: ((detailData as any).appName as string | undefined) ?? null,
+      appType: undefined,
+      serverId: undefined,
+    };
+  }, [detailData, itemType]);
+
   const retry = useCallback(async () => {
     if (mutate) {
       await mutate();
@@ -189,6 +245,9 @@ export function useItemDetailScreen(
     summary,
     details,
     deployments,
+    logsLookupName: logsLookup.name,
+    logsLookupAppType: logsLookup.appType,
+    logsLookupServerId: logsLookup.serverId,
     isApplication: itemType === 'application',
     isLoading,
     isError: hasError,

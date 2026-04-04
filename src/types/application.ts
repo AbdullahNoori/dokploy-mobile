@@ -3,10 +3,24 @@ import type { models } from '@/types/error';
 export type ApplicationOneDeployment = {
   deploymentId: string;
   title: string;
+  description?: string | null;
   status: string | null;
+  logPath?: string | null;
+  pid?: string | null;
+  applicationId?: string | null;
+  composeId?: string | null;
+  serverId?: string | null;
+  isPreviewDeployment?: boolean | null;
+  previewDeploymentId?: string | null;
   createdAt: string;
   startedAt: string | null;
   finishedAt: string | null;
+  errorMessage?: string | null;
+  scheduleId?: string | null;
+  backupId?: string | null;
+  rollbackId?: string | null;
+  volumeBackupId?: string | null;
+  buildServerId?: string | null;
 };
 
 export type ApplicationOnePort = {

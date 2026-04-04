@@ -16,11 +16,7 @@ export function NotificationsToggleRow({ title, description, value, onToggle }: 
           <Text className="font-semibold">{title}</Text>
           <Text variant="muted">{description}</Text>
         </Pressable>
-        <Switch
-          value={value}
-          onValueChange={onToggle}
-          accessibilityLabel={title}
-        />
+        <Switch value={value} onValueChange={onToggle} accessibilityLabel={title} />
       </View>
     </View>
   );
