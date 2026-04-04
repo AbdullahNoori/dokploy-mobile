@@ -77,6 +77,7 @@ This document is the single source of truth for UI design in this project. All n
   - Use portal-based patterns (`@rn-primitives/portal`).
   - Dim background `bg-black/30`.
   - Content `bg-popover`, `rounded-lg`, `p-4`.
+  - Reuse `src/components/ui/sheet.tsx` for bottom-sheet style panels.
 - Loading:
   - Inline spinners or skeletons. Disable buttons during async (`opacity-50`).
 - Empty states:
