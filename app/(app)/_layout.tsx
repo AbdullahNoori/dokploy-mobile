@@ -20,6 +20,14 @@ export default function AppLayout() {
           headerBackTitle: 'Settings',
         }}
       />
+      <Stack.Screen
+        name="web-servers"
+        options={{
+          headerShown: true,
+          headerTitle: 'Web Servers',
+          headerBackTitle: 'Settings',
+        }}
+      />
     </Stack>
   );
 }

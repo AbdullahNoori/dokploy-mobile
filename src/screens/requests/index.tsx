@@ -7,8 +7,8 @@ import { Stack } from 'expo-router';
 import { useRequestsScreen } from '@/hooks/use-requests-screen';
 
 import { RequestsActiveFilters } from './components/requests-active-filters';
-import { RequestsEmptyState } from './components/requests-empty-state';
-import { RequestsErrorState } from './components/requests-error-state';
+import { RequestsEmptyState } from './components/requests-empty';
+import { RequestsErrorState } from './components/requests-error';
 import { RequestsFilterSheet } from './components/requests-filter-sheet';
 import { RequestsHeader } from './components/requests-header';
 import { RequestsList } from './components/requests-list';
