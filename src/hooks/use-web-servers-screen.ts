@@ -1,4 +1,5 @@
-import { startTransition, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { startTransition, useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner-native';
 
 import {
@@ -103,8 +104,12 @@ export function useWebServersScreen() {
 
   const [settingsStatus, setSettingsStatus] = useState<SectionStatus>('loading');
   const [settingsError, setSettingsError] = useState<ErrorState | null>(null);
-  const [initialSettings, setInitialSettings] = useState<WebServerSettings>(DEFAULT_WEB_SERVER_SETTINGS);
-  const [draftSettings, setDraftSettings] = useState<WebServerSettings>(DEFAULT_WEB_SERVER_SETTINGS);
+  const [initialSettings, setInitialSettings] = useState<WebServerSettings>(
+    DEFAULT_WEB_SERVER_SETTINGS
+  );
+  const [draftSettings, setDraftSettings] = useState<WebServerSettings>(
+    DEFAULT_WEB_SERVER_SETTINGS
+  );
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   const [backupsStatus, setBackupsStatus] = useState<SectionStatus>('loading');
@@ -114,12 +119,14 @@ export function useWebServersScreen() {
   const [updatingBackupId, setUpdatingBackupId] = useState<string | null>(null);
   const [deletingBackupId, setDeletingBackupId] = useState<string | null>(null);
 
-  async function loadSettings() {
+  const loadSettings = useCallback(async (showLoadingState = true) => {
     const requestId = ++settingsRequestIdRef.current;
-    startTransition(() => {
-      setSettingsStatus('loading');
-      setSettingsError(null);
-    });
+    if (showLoadingState) {
+      startTransition(() => {
+        setSettingsStatus('loading');
+        setSettingsError(null);
+      });
+    }
 
     try {
       const response = await readWebServerSettings();
@@ -140,14 +147,16 @@ export function useWebServersScreen() {
       setSettingsError(resolved);
       setSettingsStatus(resolved.kind === 'unauthorized' ? 'unauthorized' : 'error');
     }
-  }
+  }, []);
 
-  async function loadBackups() {
+  const loadBackups = useCallback(async (showLoadingState = true) => {
     const requestId = ++backupsRequestIdRef.current;
-    startTransition(() => {
-      setBackupsStatus('loading');
-      setBackupsError(null);
-    });
+    if (showLoadingState) {
+      startTransition(() => {
+        setBackupsStatus('loading');
+        setBackupsError(null);
+      });
+    }
 
     try {
       const response = await readWebServerBackups();
@@ -168,22 +177,24 @@ export function useWebServersScreen() {
       setBackupsError(resolved);
       setBackupsStatus(resolved.kind === 'unauthorized' ? 'unauthorized' : 'error');
     }
-  }
-
-  useEffect(() => {
-    void loadSettings();
-    void loadBackups();
   }, []);
 
-  const setHost = (host: string) => {
+  useFocusEffect(
+    useCallback(() => {
+      void loadSettings(settingsRequestIdRef.current === 0);
+      void loadBackups(backupsRequestIdRef.current === 0);
+    }, [loadBackups, loadSettings])
+  );
+
+  const setHost = useCallback((host: string) => {
     setDraftSettings((current) => ({ ...current, host }));
-  };
+  }, []);
 
-  const setLetsEncryptEmail = (letsEncryptEmail: string) => {
+  const setLetsEncryptEmail = useCallback((letsEncryptEmail: string) => {
     setDraftSettings((current) => ({ ...current, letsEncryptEmail }));
-  };
+  }, []);
 
-  const setHttps = (https: boolean) => {
+  const setHttps = useCallback((https: boolean) => {
     setDraftSettings((current) => {
       const nextCertificateType =
         https && current.certificateType === 'none' ? 'letsencrypt' : current.certificateType;
@@ -194,17 +205,17 @@ export function useWebServersScreen() {
         certificateType: https ? nextCertificateType : 'none',
       };
     });
-  };
+  }, []);
 
-  const setCertificateType = (certificateType: WebServerCertificateType) => {
+  const setCertificateType = useCallback((certificateType: WebServerCertificateType) => {
     setDraftSettings((current) => ({
       ...current,
       certificateType,
       https: certificateType === 'none' ? false : current.https || true,
     }));
-  };
+  }, []);
 
-  const settingsValidationMessage = (() => {
+  const settingsValidationMessage = useMemo(() => {
     if (!isValidHost(draftSettings.host)) {
       return 'Enter a valid domain.';
     }
@@ -222,15 +233,18 @@ export function useWebServersScreen() {
     }
 
     return null;
-  })();
+  }, [draftSettings]);
 
-  const canSaveSettings =
-    settingsStatus === 'ready' &&
-    !isSavingSettings &&
-    !settingsValidationMessage &&
-    !areSettingsEqual(draftSettings, initialSettings);
+  const canSaveSettings = useMemo(
+    () =>
+      settingsStatus === 'ready' &&
+      !isSavingSettings &&
+      !settingsValidationMessage &&
+      !areSettingsEqual(draftSettings, initialSettings),
+    [draftSettings, initialSettings, isSavingSettings, settingsStatus, settingsValidationMessage]
+  );
 
-  async function saveSettings() {
+  const saveSettings = useCallback(async () => {
     if (!canSaveSettings) {
       if (settingsValidationMessage) {
         toast.error(settingsValidationMessage);
@@ -263,84 +277,96 @@ export function useWebServersScreen() {
     } finally {
       setIsSavingSettings(false);
     }
-  }
+  }, [canSaveSettings, draftSettings, settingsValidationMessage]);
 
-  async function runBackup(backupId: string) {
-    if (runningBackupId || updatingBackupId || deletingBackupId) {
-      return;
-    }
+  const runBackup = useCallback(
+    async (backupId: string) => {
+      if (runningBackupId || updatingBackupId || deletingBackupId) {
+        return;
+      }
 
-    setRunningBackupId(backupId);
+      setRunningBackupId(backupId);
 
-    try {
-      await runWebServerBackup({ backupId });
-      toast.success('Backup run started.');
-    } catch (error) {
-      toast.error(resolveErrorState(error, 'Unable to run backup.').message);
-    } finally {
-      setRunningBackupId(null);
-    }
-  }
+      try {
+        await runWebServerBackup({ backupId });
+        toast.success('Backup run started.');
+      } catch (error) {
+        toast.error(resolveErrorState(error, 'Unable to run backup.').message);
+      } finally {
+        setRunningBackupId(null);
+      }
+    },
+    [deletingBackupId, runningBackupId, updatingBackupId]
+  );
 
-  async function runPrimaryBackup() {
-    const primaryBackup = getPrimaryBackup(backups);
-    if (!primaryBackup) {
+  const primaryBackupId = useMemo(() => getPrimaryBackup(backups)?.backupId ?? null, [backups]);
+
+  const runPrimaryBackup = useCallback(async () => {
+    if (!primaryBackupId) {
       toast.error('No web server backup is available yet.');
       return;
     }
 
-    await runBackup(primaryBackup.backupId);
-  }
+    await runBackup(primaryBackupId);
+  }, [primaryBackupId, runBackup]);
 
-  async function saveBackup(payload: WebServerBackupUpdateRequest) {
-    if (runningBackupId || updatingBackupId || deletingBackupId) {
-      return false;
-    }
+  const saveBackup = useCallback(
+    async (payload: WebServerBackupUpdateRequest) => {
+      if (runningBackupId || updatingBackupId || deletingBackupId) {
+        return false;
+      }
 
-    setUpdatingBackupId(payload.backupId);
+      setUpdatingBackupId(payload.backupId);
 
-    try {
-      await updateWebServerBackup(payload);
-      toast.success('Backup updated.');
-      await loadBackups();
-      return true;
-    } catch (error) {
-      toast.error(resolveErrorState(error, 'Unable to update backup.').message);
-      return false;
-    } finally {
-      setUpdatingBackupId(null);
-    }
-  }
+      try {
+        await updateWebServerBackup(payload);
+        toast.success('Backup updated.');
+        await loadBackups();
+        return true;
+      } catch (error) {
+        toast.error(resolveErrorState(error, 'Unable to update backup.').message);
+        return false;
+      } finally {
+        setUpdatingBackupId(null);
+      }
+    },
+    [deletingBackupId, loadBackups, runningBackupId, updatingBackupId]
+  );
 
-  async function removeBackup(backupId: string) {
-    if (runningBackupId || updatingBackupId || deletingBackupId) {
-      return false;
-    }
+  const removeBackup = useCallback(
+    async (backupId: string) => {
+      if (runningBackupId || updatingBackupId || deletingBackupId) {
+        return false;
+      }
 
-    setDeletingBackupId(backupId);
+      setDeletingBackupId(backupId);
 
-    try {
-      await deleteWebServerBackup({ backupId });
-      setBackups((current) => current.filter((backup) => backup.backupId !== backupId));
-      toast.success('Backup deleted.');
-      return true;
-    } catch (error) {
-      toast.error(resolveErrorState(error, 'Unable to delete backup.').message);
-      return false;
-    } finally {
-      setDeletingBackupId(null);
-    }
-  }
+      try {
+        await deleteWebServerBackup({ backupId });
+        setBackups((current) => current.filter((backup) => backup.backupId !== backupId));
+        toast.success('Backup deleted.');
+        return true;
+      } catch (error) {
+        toast.error(resolveErrorState(error, 'Unable to delete backup.').message);
+        return false;
+      } finally {
+        setDeletingBackupId(null);
+      }
+    },
+    [deletingBackupId, runningBackupId, updatingBackupId]
+  );
 
-  const isInitialLoading =
-    settingsStatus === 'loading' &&
-    backupsStatus === 'loading' &&
-    backups.length === 0 &&
-    areSettingsEqual(initialSettings, DEFAULT_WEB_SERVER_SETTINGS);
+  const isInitialLoading = useMemo(
+    () =>
+      settingsStatus === 'loading' &&
+      backupsStatus === 'loading' &&
+      backups.length === 0 &&
+      areSettingsEqual(initialSettings, DEFAULT_WEB_SERVER_SETTINGS),
+    [backups.length, backupsStatus, initialSettings, settingsStatus]
+  );
 
-  return {
-    isInitialLoading,
-    settings: {
+  const settings = useMemo(
+    () => ({
       status: settingsStatus,
       error: settingsError,
       value: draftSettings,
@@ -353,12 +379,29 @@ export function useWebServersScreen() {
       setCertificateType,
       save: saveSettings,
       retry: loadSettings,
-    },
-    backups: {
+    }),
+    [
+      canSaveSettings,
+      draftSettings,
+      isSavingSettings,
+      loadSettings,
+      saveSettings,
+      setCertificateType,
+      setHost,
+      setHttps,
+      setLetsEncryptEmail,
+      settingsError,
+      settingsStatus,
+      settingsValidationMessage,
+    ]
+  );
+
+  const backupsState = useMemo(
+    () => ({
       status: backupsStatus,
       error: backupsError,
       items: backups,
-      primaryBackupId: getPrimaryBackup(backups)?.backupId ?? null,
+      primaryBackupId,
       runningBackupId,
       updatingBackupId,
       deletingBackupId,
@@ -367,6 +410,29 @@ export function useWebServersScreen() {
       save: saveBackup,
       remove: removeBackup,
       retry: loadBackups,
-    },
-  };
+    }),
+    [
+      backups,
+      backupsError,
+      backupsStatus,
+      deletingBackupId,
+      loadBackups,
+      primaryBackupId,
+      removeBackup,
+      runBackup,
+      runPrimaryBackup,
+      runningBackupId,
+      saveBackup,
+      updatingBackupId,
+    ]
+  );
+
+  return useMemo(
+    () => ({
+      isInitialLoading,
+      settings,
+      backups: backupsState,
+    }),
+    [backupsState, isInitialLoading, settings]
+  );
 }

@@ -1,50 +1,75 @@
+import { useCallback } from 'react';
 import { Alert, ScrollView } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { useWebServersScreen } from '@/hooks/use-web-servers-screen';
 import type { WebServerBackup } from '@/types/web-servers';
 
+import { buildWebServerBackupEditParams } from '../../lib/backup-edit-route';
 import { BackupsSection } from './components/backups-section';
 import { ServerDomainCard } from './components/server-domain-card';
-import { WebServersHeader } from './components/web-servers-header';
 import { WebServersSkeleton } from './components/web-servers-skeleton';
 
 export default function WebServersScreen() {
   const { isInitialLoading, settings, backups } = useWebServersScreen();
+  const router = useRouter();
 
-  const handleDelete = (backup: WebServerBackup) => {
-    Alert.alert('Delete Backup', `Remove the backup configuration for ${backup.destinationName}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          void backups.remove(backup.backupId);
-        },
-      },
-    ]);
-  };
+  const confirmDelete = useCallback(
+    (backup: WebServerBackup) => {
+      Alert.alert(
+        'Delete Backup',
+        `Remove the backup configuration for ${backup.destinationName}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              void backups.remove(backup.backupId);
+            },
+          },
+        ]
+      );
+    },
+    [backups.remove]
+  );
 
-  const handleSettingsRetry = () => {
-    void settings.retry();
-  };
+  const handleDelete = useCallback(
+    (backup: WebServerBackup) => {
+      confirmDelete(backup);
+    },
+    [confirmDelete]
+  );
 
-  const handleSettingsSave = () => {
-    void settings.save();
-  };
+  const handleSettingsRetry = useCallback(() => {
+    settings.retry();
+  }, [settings.retry]);
 
-  const handleBackupsRetry = () => {
-    void backups.retry();
-  };
+  const handleSettingsSave = useCallback(() => {
+    settings.save();
+  }, [settings.save]);
 
-  const handleRunPrimary = () => {
-    void backups.runPrimary();
-  };
+  const handleBackupsRetry = useCallback(() => {
+    backups.retry();
+  }, [backups.retry]);
 
-  const handleRunBackup = (backupId: string) => {
-    void backups.run(backupId);
-  };
+  const handleRunBackup = useCallback(
+    (backupId: string) => {
+      backups.run(backupId);
+    },
+    [backups.run]
+  );
+
+  const handleEditBackup = useCallback(
+    (backup: WebServerBackup) => {
+      router.push({
+        pathname: '/web-server-backup-edit',
+        params: buildWebServerBackupEditParams(backup),
+      });
+    },
+    [router]
+  );
 
   if (isInitialLoading) {
     return <WebServersSkeleton />;
@@ -64,8 +89,6 @@ export default function WebServersScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerClassName="gap-4 px-4 py-4"
         showsVerticalScrollIndicator={false}>
-        <WebServersHeader />
-
         <ServerDomainCard
           status={settings.status}
           value={settings.value}
@@ -85,14 +108,12 @@ export default function WebServersScreen() {
           status={backups.status}
           error={backups.error}
           items={backups.items}
-          primaryBackupId={backups.primaryBackupId}
           runningBackupId={backups.runningBackupId}
           updatingBackupId={backups.updatingBackupId}
           deletingBackupId={backups.deletingBackupId}
           onRetry={handleBackupsRetry}
-          onRunPrimary={handleRunPrimary}
           onRun={handleRunBackup}
-          onSave={backups.save}
+          onEdit={handleEditBackup}
           onDelete={handleDelete}
         />
       </ScrollView>

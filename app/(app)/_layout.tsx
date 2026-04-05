@@ -28,6 +28,22 @@ export default function AppLayout() {
           headerBackTitle: 'Settings',
         }}
       />
+      <Stack.Screen
+        name="web-server-backup-edit"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.9, 0.98],
+          sheetInitialDetentIndex: 0,
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 24,
+          sheetLargestUndimmedDetentIndex: 0,
+          headerShown: true,
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerTitle: 'Edit Backup',
+          headerBackTitle: 'Web Servers',
+        }}
+      />
     </Stack>
   );
 }

@@ -137,9 +137,7 @@ export function ServerDomainCard({
                 true: THEME[resolvedTheme].mutedForeground,
               }}
               thumbColor={
-                value.https
-                  ? THEME[resolvedTheme].background
-                  : THEME[resolvedTheme].foreground
+                value.https ? THEME[resolvedTheme].background : THEME[resolvedTheme].foreground
               }
               ios_backgroundColor={THEME[resolvedTheme].secondary}
             />
