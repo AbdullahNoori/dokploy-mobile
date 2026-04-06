@@ -10,11 +10,14 @@ type Props = {
 
 export function NotificationsNameCard({ value, onChangeText }: Props) {
   return (
-    <View className="bg-card border-border/80 rounded-lg border p-4">
-      <Text variant="muted" className="text-xs font-semibold uppercase tracking-wide">
-        Name
-      </Text>
-      <Input placeholder="Notification name" className="mt-3" value={value} onChangeText={onChangeText} />
+    <View className="bg-card border-border/80 gap-3 rounded-2xl border p-4">
+      <View className="gap-1">
+        <Text variant="muted" className="text-xs font-semibold tracking-wide uppercase">
+          Name
+        </Text>
+        <Text variant="muted">Give this provider a clear label so it is easy to spot later.</Text>
+      </View>
+      <Input placeholder="Notification name" value={value} onChangeText={onChangeText} />
     </View>
   );
 }

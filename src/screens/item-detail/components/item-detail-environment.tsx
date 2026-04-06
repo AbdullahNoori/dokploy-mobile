@@ -80,7 +80,6 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
     setLastSaved(envValue);
   }, [envValue]);
 
-
   const lineNumbers = useMemo(() => {
     const lines = draft.length ? draft.split('\n') : [''];
     return lines.map((_, index) => index + 1);
@@ -240,9 +239,7 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
             className="bg-muted/80 border-border/80 w-9 items-end border-r px-2 py-3"
             style={{ height: editorHeight }}>
             {lineNumbers.map((lineNumber) => (
-              <Text
-                key={lineNumber}
-                className="text-muted-foreground font-mono text-xs leading-5">
+              <Text key={lineNumber} className="text-muted-foreground font-mono text-xs leading-5">
                 {lineNumber}
               </Text>
             ))}

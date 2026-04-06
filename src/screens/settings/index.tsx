@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
@@ -8,10 +8,21 @@ import { BellIcon, ChevronRightIcon, GlobeIcon, ShieldIcon } from 'lucide-react-
 
 export default function SettingsScreen() {
   return (
-    <SafeAreaView className="bg-background flex-1" edges={['left', 'right']}>
-      <Stack.Screen options={{ title: 'Settings', headerShown: true, headerTransparent: false }} />
-      <View className="flex-1 px-4 pt-0">
-        <View className="mt-4 gap-2">
+    <SafeAreaView className="bg-background flex-1" edges={['left', 'top', 'right']}>
+      <Stack.Screen
+        options={{
+          title: 'Settings',
+          headerShown: true,
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: 'transparent' },
+        }}
+      />
+      <ScrollView
+        className="flex-1"
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerClassName="px-4 pb-8 pt-4">
+        <View className="gap-2">
           <Link href="/(app)/requests" asChild>
             <Pressable className="bg-card border-border/80 flex-row items-center justify-between rounded-lg border px-4 py-3">
               <View className="flex-row items-center gap-3">
@@ -40,7 +51,7 @@ export default function SettingsScreen() {
             </Pressable>
           </Link>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
