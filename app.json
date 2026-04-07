@@ -12,19 +12,19 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.afghan-gallery.dokploy-mobile"
+      "bundleIdentifier": "com.abdullah.dokploymobile",
+      "googleServicesFile": "./src/config/GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.afghangallery.dokploymobile"
+      "package": "com.abdullah.dokploymobile",
+      "googleServicesFile": "./src/config/google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -34,7 +34,9 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "react-native-enriched-markdown"
+      "react-native-enriched-markdown",
+      "@react-native-firebase/app",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

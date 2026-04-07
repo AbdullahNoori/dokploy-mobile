@@ -16,6 +16,13 @@ web-build/
 *.key
 *.mobileprovision
 
+# React Native build folders
+android/
+android/**
+ios/
+ios/**
+
+
 # Metro
 .metro-health-check*
 
@@ -44,3 +51,4 @@ expo-env.d.ts
 
 *.md
 *.html
+*.env

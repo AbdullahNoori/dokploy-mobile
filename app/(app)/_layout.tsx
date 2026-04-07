@@ -1,6 +1,9 @@
+import { usePushNotificationsBootstrap } from '@/hooks/use-push-notifications-bootstrap';
 import { Stack } from 'expo-router';
 
 export default function AppLayout() {
+  usePushNotificationsBootstrap();
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />

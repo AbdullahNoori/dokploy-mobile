@@ -116,7 +116,6 @@ export default function NotificationsScreen() {
             data={notifications}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            // ListHeaderComponent={listHeader}
             contentInsetAdjustmentBehavior="automatic"
             contentContainerClassName="gap-3 py-4"
             showsVerticalScrollIndicator={false}
