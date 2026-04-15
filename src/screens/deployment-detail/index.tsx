@@ -1,5 +1,6 @@
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { useHeaderHeight } from '@react-navigation/elements';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Text } from '@/components/ui/text';
@@ -27,6 +28,7 @@ export default function DeploymentDetailScreen() {
   const deploymentId = getParamValue(params.deploymentId);
   const title = getParamValue(params.title) ?? 'Deployment';
   const logPath = toNullable(params.logPath);
+  const headerHeight = useHeaderHeight();
 
   const { lines, hasLogPath, isEmpty, isConnecting, isConnected, error, reconnect } =
     useDeploymentLogSocket({
@@ -52,7 +54,7 @@ export default function DeploymentDetailScreen() {
   return (
     <SafeAreaView className="bg-background flex-1" edges={['left', 'right']}>
       <Stack.Screen options={{ title: title || 'Deployment' }} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="px-4 pt-3 pb-4">
+      <View className="flex-1 px-4 pb-4" style={{ paddingTop: headerHeight + 12 }}>
         <DeploymentLogViewer
           title={title}
           lines={lines}
@@ -63,7 +65,7 @@ export default function DeploymentDetailScreen() {
           error={error}
           onReconnect={reconnect}
         />
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

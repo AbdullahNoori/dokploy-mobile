@@ -40,6 +40,22 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="requests-filters"
+        options={{
+          presentation: 'formSheet',
+          sheetAllowedDetents: [0.9, 0.98],
+          sheetInitialDetentIndex: 0,
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 24,
+          sheetLargestUndimmedDetentIndex: 0,
+          headerShown: true,
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerTitle: 'Filters',
+          headerBackTitle: 'Requests',
+        }}
+      />
+      <Stack.Screen
         name="web-servers"
         options={{
           headerShown: true,

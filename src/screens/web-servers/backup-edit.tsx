@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Switch, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { CircleAlertIcon } from 'lucide-react-native';
 import { toast } from 'sonner-native';
-import { useUniwind } from 'uniwind';
 
 import { updateWebServerBackup } from '@/api/web-servers';
 import { Button } from '@/components/ui/button';
@@ -11,13 +10,13 @@ import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
 import {
   parseWebServerBackupEditParams,
   type WebServerBackupEditRouteParams,
 } from '@/lib/backup-edit-route';
 import { HttpError } from '@/lib/http-error';
-import { THEME } from '@/lib/theme';
 import { isErrorResponse } from '@/lib/utils';
 import type { WebServerBackupUpdateRequest } from '@/types/web-servers';
 
@@ -49,8 +48,6 @@ function formatScheduleOption(option: { label: string; value: string }) {
 export default function WebServerBackupEditScreen() {
   const params = useLocalSearchParams<WebServerBackupEditRouteParams>();
   const router = useRouter();
-  const { theme } = useUniwind();
-  const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
 
   const routeValues = useMemo(() => parseWebServerBackupEditParams(params), [params]);
   const [initialValues, setInitialValues] = useState(routeValues);
@@ -175,94 +172,95 @@ export default function WebServerBackupEditScreen() {
         }}
       />
 
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerClassName="gap-4 px-4 py-4"
-        showsVerticalScrollIndicator={false}>
-        <View className="gap-2">
-          <Text className="text-sm font-semibold">Destination</Text>
-          <Input editable={false} value={initialValues.destinationName} />
-        </View>
-
-        <View className="gap-2">
-          <Text className="text-sm font-semibold">Database</Text>
-          <Input editable={false} value={initialValues.database} />
-        </View>
-
-        <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <Text className="text-sm font-semibold">Schedule</Text>
-            <Icon as={CircleAlertIcon} className="text-muted-foreground size-4" />
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.select({ ios: 'height', android: 'height' })}>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerClassName="gap-4 px-4 py-4"
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={true}
+          showsVerticalScrollIndicator={false}>
+          <View className="gap-2">
+            <Text className="text-sm font-semibold">Destination</Text>
+            <Input editable={false} value={initialValues.destinationName} />
           </View>
-          <Select
-            value={schedule}
-            onValueChange={setSchedule}
-            options={scheduleOptions}
-            placeholder="Select a predefined schedule"
-          />
-          <Text variant="muted" className="text-xs">
-            Choose from the supported backup schedules.
-          </Text>
-        </View>
 
-        <View className="gap-2">
-          <Text className="text-sm font-semibold">Prefix Destination</Text>
-          <Input
-            value={prefix}
-            onChangeText={setPrefix}
-            placeholder="/dokploy"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text variant="muted" className="text-xs">
-            Use if you want to back up in a specific path of your destination or bucket.
-          </Text>
-        </View>
+          <View className="gap-2">
+            <Text className="text-sm font-semibold">Database</Text>
+            <Input editable={false} value={initialValues.database} />
+          </View>
 
-        <View className="gap-2">
-          <Text className="text-sm font-semibold">Keep the latest</Text>
-          <Input
-            value={keepLatestCount}
-            onChangeText={setKeepLatestCount}
-            keyboardType="number-pad"
-            placeholder="2"
-          />
-          <Text variant="muted" className="text-xs">
-            Optional. If provided, only keeps the latest N backups in the cloud.
-          </Text>
-        </View>
-
-        <View className="bg-background border-border/70 flex-row items-center justify-between rounded-2xl border p-4">
-          <View className="flex-1 pr-4">
-            <Text className="text-sm font-semibold">Enabled</Text>
+          <View className="gap-2">
+            <View className="flex-row items-center gap-2">
+              <Text className="text-sm font-semibold">Schedule</Text>
+              <Icon as={CircleAlertIcon} className="text-muted-foreground size-4" />
+            </View>
+            <Select
+              value={schedule}
+              onValueChange={setSchedule}
+              options={scheduleOptions}
+              placeholder="Select a predefined schedule"
+            />
             <Text variant="muted" className="text-xs">
-              Enable or disable the backup.
+              Choose from the supported backup schedules.
             </Text>
           </View>
-          <Switch
-            value={enabled}
-            onValueChange={setEnabled}
-            accessibilityLabel="Enabled"
-            trackColor={{
-              false: THEME[resolvedTheme].secondary,
-              true: THEME[resolvedTheme].mutedForeground,
-            }}
-            thumbColor={enabled ? THEME[resolvedTheme].background : THEME[resolvedTheme].foreground}
-            ios_backgroundColor={THEME[resolvedTheme].secondary}
-          />
-        </View>
 
-        {validationMessage ? (
-          <Text className="text-destructive text-sm">{validationMessage}</Text>
-        ) : null}
+          <View className="gap-2">
+            <Text className="text-sm font-semibold">Prefix Destination</Text>
+            <Input
+              value={prefix}
+              onChangeText={setPrefix}
+              placeholder="/dokploy"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Text variant="muted" className="text-xs">
+              Use if you want to back up in a specific path of your destination or bucket.
+            </Text>
+          </View>
 
-        <Button
-          disabled={Boolean(validationMessage) || !isDirty || isSubmitting}
-          onPress={handleSubmit}
-          className="mt-2">
-          <Text>{isSubmitting ? 'Saving...' : 'Save Changes'}</Text>
-        </Button>
-      </ScrollView>
+          <View className="gap-2">
+            <Text className="text-sm font-semibold">Keep the latest</Text>
+            <Input
+              value={keepLatestCount}
+              onChangeText={setKeepLatestCount}
+              keyboardType="number-pad"
+              placeholder="2"
+            />
+            <Text variant="muted" className="text-xs">
+              Optional. If provided, only keeps the latest N backups in the cloud.
+            </Text>
+          </View>
+
+          <View className="bg-background border-border/70 flex-row items-center justify-between rounded-2xl border p-4">
+            <View className="flex-1 pr-4">
+              <Text className="text-sm font-semibold">Enabled</Text>
+              <Text variant="muted" className="text-xs">
+                Enable or disable the backup.
+              </Text>
+            </View>
+            <Switch
+              checked={enabled}
+              onCheckedChange={setEnabled}
+              accessibilityLabel="Enabled"
+            />
+          </View>
+
+          {validationMessage ? (
+            <Text className="text-destructive text-sm">{validationMessage}</Text>
+          ) : null}
+
+          <Button
+            disabled={Boolean(validationMessage) || !isDirty || isSubmitting}
+            onPress={handleSubmit}
+            className="mt-2">
+            <Text>{isSubmitting ? 'Saving...' : 'Save Changes'}</Text>
+          </Button>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

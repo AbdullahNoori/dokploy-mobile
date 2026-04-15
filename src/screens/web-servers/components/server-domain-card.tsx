@@ -1,14 +1,13 @@
-import { Switch, View } from 'react-native';
+import { View } from 'react-native';
 import { GlobeIcon } from 'lucide-react-native';
 import { SettingsAssignDomainServerCertificateType } from 'dokploy-sdk/models/operations';
-import { useUniwind } from 'uniwind';
 
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
-import { THEME } from '@/lib/theme';
 import type { WebServerCertificateType, WebServerSettings } from '@/types/web-servers';
 
 import { WebServersErrorState } from './web-servers-error';
@@ -53,8 +52,6 @@ export function ServerDomainCard({
   onRetry,
   onSave,
 }: Props) {
-  const { theme } = useUniwind();
-  const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const showCertificateProvider =
     value.https || value.certificateType === SettingsAssignDomainServerCertificateType.None;
 
@@ -129,17 +126,9 @@ export function ServerDomainCard({
               </Text>
             </View>
             <Switch
-              value={value.https}
-              onValueChange={onChangeHttps}
+              checked={value.https}
+              onCheckedChange={onChangeHttps}
               accessibilityLabel="HTTPS"
-              trackColor={{
-                false: THEME[resolvedTheme].secondary,
-                true: THEME[resolvedTheme].mutedForeground,
-              }}
-              thumbColor={
-                value.https ? THEME[resolvedTheme].background : THEME[resolvedTheme].foreground
-              }
-              ios_backgroundColor={THEME[resolvedTheme].secondary}
             />
           </View>
 

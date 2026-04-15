@@ -1,6 +1,7 @@
 import type { EventSubscription } from 'expo-modules-core';
+import messaging from '@react-native-firebase/messaging';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
 
 import {
   clearStoredPushNotificationState,
@@ -15,6 +16,7 @@ import type { PushPermissionStatus, PushTokenRecord } from '@/types/push-notific
 const DEFAULT_ANDROID_CHANNEL_ID = 'default';
 
 let notificationResponseSubscription: EventSubscription | null = null;
+let tokenRefreshUnsubscribe: (() => void) | null = null;
 let lastHandledNotificationResponseKey: string | null = null;
 
 Notifications.setNotificationHandler({
@@ -30,22 +32,6 @@ function isNativeMobilePlatform(
   platform: typeof Platform.OS
 ): platform is PushTokenRecord['platform'] {
   return platform === 'android' || platform === 'ios';
-}
-
-function normalizePermissionStatus(status: Notifications.PermissionStatus): PushPermissionStatus {
-  if (status === Notifications.PermissionStatus.GRANTED) {
-    return 'granted';
-  }
-
-  if (status === Notifications.PermissionStatus.DENIED) {
-    return 'denied';
-  }
-
-  return 'undetermined';
-}
-
-function getTokenTypeForPlatform(platform: PushTokenRecord['platform']): PushTokenRecord['tokenType'] {
-  return platform === 'android' ? 'fcm' : 'apns';
 }
 
 function getNotificationResponseKey(response: Notifications.NotificationResponse): string {
@@ -80,6 +66,75 @@ async function ensureAndroidNotificationChannelAsync(): Promise<void> {
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#3b82f6',
   });
+}
+
+function normalizeMessagingPermissionStatus(status: number): PushPermissionStatus {
+  if (
+    status === messaging.AuthorizationStatus.AUTHORIZED ||
+    status === messaging.AuthorizationStatus.PROVISIONAL
+  ) {
+    return 'granted';
+  }
+
+  if (status === messaging.AuthorizationStatus.DENIED) {
+    return 'denied';
+  }
+
+  return 'undetermined';
+}
+
+async function requestPushPermissionAsync(): Promise<PushPermissionStatus> {
+  if (Platform.OS === 'ios') {
+    const status = await messaging().requestPermission();
+    return normalizeMessagingPermissionStatus(status);
+  }
+
+  if (Platform.OS === 'android') {
+    const platformVersion = typeof Platform.Version === 'number' ? Platform.Version : 0;
+
+    if (platformVersion < 33) {
+      return 'granted';
+    }
+
+    const existingPermission = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+    );
+
+    if (existingPermission) {
+      return 'granted';
+    }
+
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+    );
+
+    if (result === PermissionsAndroid.RESULTS.GRANTED) {
+      return 'granted';
+    }
+
+    return result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN ? 'denied' : 'undetermined';
+  }
+
+  return 'undetermined';
+}
+
+async function getFcmTokenAsync(): Promise<string> {
+  await messaging().registerDeviceForRemoteMessages();
+  return messaging().getToken();
+}
+
+function createPushTokenRecord(
+  token: string,
+  platform: PushTokenRecord['platform'],
+  permissionStatus: PushPermissionStatus
+): PushTokenRecord {
+  return {
+    token,
+    platform,
+    tokenType: 'fcm',
+    permissionStatus,
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 function storePushTokenRecord(record: PushTokenRecord): void {
@@ -140,16 +195,7 @@ export async function initializePushNotificationsForSignedInUser(): Promise<void
 
   try {
     await ensureAndroidNotificationChannelAsync();
-
-    const existingPermissions = await Notifications.getPermissionsAsync();
-    let finalStatus = existingPermissions.status;
-
-    if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
-      const requestedPermissions = await Notifications.requestPermissionsAsync();
-      finalStatus = requestedPermissions.status;
-    }
-
-    const permissionStatus = normalizePermissionStatus(finalStatus);
+    const permissionStatus = await requestPushPermissionAsync();
     setStoredPushPermissionStatus(permissionStatus);
 
     if (permissionStatus !== 'granted') {
@@ -158,17 +204,12 @@ export async function initializePushNotificationsForSignedInUser(): Promise<void
       return;
     }
 
-    const devicePushToken = await Notifications.getDevicePushTokenAsync();
-    const record: PushTokenRecord = {
-      token: String(devicePushToken.data),
-      platform: Platform.OS,
-      tokenType: getTokenTypeForPlatform(Platform.OS),
-      permissionStatus,
-      updatedAt: new Date().toISOString(),
-    };
+    const token = await getFcmTokenAsync();
+    const record = createPushTokenRecord(token, Platform.OS, permissionStatus);
 
     storePushTokenRecord(record);
     logPushLifecycleEvent('Push Token Stored', {
+      token: record.token,
       platform: record.platform,
       tokenType: record.tokenType,
       updatedAt: record.updatedAt,
@@ -177,6 +218,31 @@ export async function initializePushNotificationsForSignedInUser(): Promise<void
     clearStoredPushTokenRecord();
     logPushLifecycleEvent('Push Initialization Error', error);
   }
+}
+
+export function subscribeToPushTokenRefresh(): () => void {
+  if (!isNativeMobilePlatform(Platform.OS)) {
+    return () => undefined;
+  }
+
+  const nativePlatform = Platform.OS;
+
+  tokenRefreshUnsubscribe?.();
+  tokenRefreshUnsubscribe = messaging().onTokenRefresh((token) => {
+    const record = createPushTokenRecord(token, nativePlatform, 'granted');
+    storePushTokenRecord(record);
+    setStoredPushPermissionStatus('granted');
+    logPushLifecycleEvent('Push Token Refreshed', {
+      platform: record.platform,
+      tokenType: record.tokenType,
+      updatedAt: record.updatedAt,
+    });
+  });
+
+  return () => {
+    tokenRefreshUnsubscribe?.();
+    tokenRefreshUnsubscribe = null;
+  };
 }
 
 export function subscribeToNotificationResponses(): () => void {

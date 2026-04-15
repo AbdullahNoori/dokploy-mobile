@@ -1,7 +1,17 @@
 import { useState } from 'react';
 
+export type NotificationToggleId =
+  | 'app-deploy'
+  | 'build-error'
+  | 'db-backup'
+  | 'volume-backup'
+  | 'docker-cleanup'
+  | 'dokploy-restart';
+
+export type NotificationToggleState = Record<NotificationToggleId, boolean>;
+
 type NotificationToggle = {
-  id: string;
+  id: NotificationToggleId;
   title: string;
   description: string;
   enabled: boolean;
@@ -68,8 +78,8 @@ const SECTIONS: NotificationSection[] = [
 
 export function useNotificationsScreen() {
   const [name, setName] = useState('');
-  const [toggles, setToggles] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
+  const [toggles, setToggles] = useState<NotificationToggleState>(() => {
+    const initial = {} as NotificationToggleState;
 
     for (const section of SECTIONS) {
       for (const item of section.items) {
@@ -80,7 +90,7 @@ export function useNotificationsScreen() {
     return initial;
   });
 
-  const toggleItem = (id: string, next: boolean) => {
+  const toggleItem = (id: NotificationToggleId, next: boolean) => {
     setToggles((current) => ({ ...current, [id]: next }));
   };
 

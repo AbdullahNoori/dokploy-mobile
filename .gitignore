@@ -52,3 +52,4 @@ expo-env.d.ts
 *.md
 *.html
 *.env
+.omx/

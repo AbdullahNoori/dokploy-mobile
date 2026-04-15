@@ -139,3 +139,20 @@ export type NotificationAllResponseBody = {
 };
 
 export type NotificationAllResponse = models.ErrorT | NotificationAllResponseBody[];
+
+export type NotificationCreateCustomRequest = {
+  appBuildError: boolean;
+  appDeploy: boolean;
+  databaseBackup: boolean;
+  dockerCleanup: boolean;
+  dokployRestart: boolean;
+  endpoint: string;
+  headers: Record<string, string>;
+  name: string;
+  notificationId: string;
+  customId: string;
+  serverThreshold: boolean;
+  volumeBackup: boolean;
+};
+
+export type NotificationCreateCustomResponse = models.ErrorT | NotificationAllResponseBody;

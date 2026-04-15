@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { ScrollView, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSWRConfig } from 'swr';
 import { toast } from 'sonner-native';
@@ -54,6 +54,9 @@ export default function DomainCreateScreen() {
   }>();
   const router = useRouter();
   const { mutate } = useSWRConfig();
+  const pathInputRef = useRef<TextInput>(null);
+  const internalPathInputRef = useRef<TextInput>(null);
+  const portInputRef = useRef<TextInput>(null);
 
   const isEdit = mode === 'edit' && !!domainId;
 
@@ -184,7 +187,10 @@ export default function DomainCreateScreen() {
   return (
     <SafeAreaView className="bg-background flex-1" edges={['left', 'right']}>
       <Stack.Screen options={{ title: isEdit ? 'Edit Domain' : 'Add Domain' }} />
-      <ScrollView contentContainerClassName="gap-4 px-4 py-4">
+      <ScrollView
+        contentContainerClassName="gap-4 px-4 py-4"
+        automaticallyAdjustKeyboardInsets={true}
+        keyboardDismissMode="interactive">
         <View className="gap-2">
           <Text className="text-sm font-semibold">Host</Text>
           <Input
@@ -192,12 +198,22 @@ export default function DomainCreateScreen() {
             value={host}
             onChangeText={setHost}
             returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => pathInputRef.current?.focus()}
           />
         </View>
 
         <View className="gap-2">
           <Text className="text-sm font-semibold">Path</Text>
-          <Input placeholder="/" value={path} onChangeText={setPath} returnKeyType="next" />
+          <Input
+            ref={pathInputRef}
+            placeholder="/"
+            value={path}
+            onChangeText={setPath}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => internalPathInputRef.current?.focus()}
+          />
         </View>
 
         <View className="gap-2">
@@ -205,7 +221,15 @@ export default function DomainCreateScreen() {
           <Text variant="muted" className="text-xs">
             The path your app expects internally (defaults to "/").
           </Text>
-          <Input placeholder="/" value={internalPath} onChangeText={setInternalPath} />
+          <Input
+            ref={internalPathInputRef}
+            placeholder="/"
+            value={internalPath}
+            onChangeText={setInternalPath}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => portInputRef.current?.focus()}
+          />
         </View>
 
         <View className="bg-card border-border/80 flex-row items-center justify-between rounded-lg border p-4">
@@ -220,7 +244,15 @@ export default function DomainCreateScreen() {
 
         <View className="gap-2">
           <Text className="text-sm font-semibold">Container Port</Text>
-          <Input placeholder="3000" value={port} onChangeText={setPort} keyboardType="number-pad" />
+          <Input
+            ref={portInputRef}
+            placeholder="3000"
+            value={port}
+            onChangeText={setPort}
+            keyboardType="number-pad"
+            returnKeyType="done"
+            // onSubmitEditing={handleSubmit}
+          />
         </View>
 
         <View className="bg-card border-border/80 flex-row items-center justify-between rounded-lg border p-4">

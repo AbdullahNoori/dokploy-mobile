@@ -4,16 +4,19 @@ import {
   clearStoredPushNotificationState,
   initializePushNotificationsForSignedInUser,
   subscribeToNotificationResponses,
+  subscribeToPushTokenRefresh,
 } from '@/lib/push-notifications';
 
 export function usePushNotificationsBootstrap() {
   useEffect(() => {
-    const unsubscribe = subscribeToNotificationResponses();
+    const unsubscribeNotificationResponses = subscribeToNotificationResponses();
+    const unsubscribeTokenRefresh = subscribeToPushTokenRefresh();
 
     void initializePushNotificationsForSignedInUser();
 
     return () => {
-      unsubscribe();
+      unsubscribeNotificationResponses();
+      unsubscribeTokenRefresh();
       clearStoredPushNotificationState();
     };
   }, []);

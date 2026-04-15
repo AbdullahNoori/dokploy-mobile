@@ -1,21 +1,17 @@
-import {
-  startTransition,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { DEFAULT_REQUESTS_PAGE_SIZE, readSettingsStats } from '@/api/settings';
 import { HttpError } from '@/lib/http-error';
+import { consumePendingRequestsFilters, type RequestsFilters } from '@/lib/requests-filter-route';
 import {
   DEFAULT_REQUESTS_DATE_PRESET,
   type RequestsDatePreset,
   getRequestsDateRange,
 } from '@/lib/utils';
 import type { SettingsRequestLogEntry, SettingsRequestStatusFamily } from '@/types/settings';
+import { toast } from 'sonner-native';
+import { useDebouncedValue } from './use-debounced-value';
 
 const resolveErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof HttpError) {
@@ -30,11 +26,6 @@ const resolveErrorMessage = (error: unknown, fallback: string) => {
   }
 
   return fallback;
-};
-
-type RequestsFilters = {
-  datePreset: RequestsDatePreset;
-  statuses: SettingsRequestStatusFamily[];
 };
 
 type LoadPageOptions = {
@@ -72,7 +63,7 @@ type UseRequestsScreenResult = {
 
 export function useRequestsScreen(): UseRequestsScreenResult {
   const [query, setQuery] = useState('');
-  const deferredQuery = useDeferredValue(query);
+  const debouncedQuery = useDebouncedValue(query, 300);
   const [filters, setFilters] = useState<RequestsFilters>({
     datePreset: DEFAULT_REQUESTS_DATE_PRESET,
     statuses: [],
@@ -85,17 +76,19 @@ export function useRequestsScreen(): UseRequestsScreenResult {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const activeRequestIdRef = useRef(0);
+  const hasLoadedOnceRef = useRef(false);
 
   const loadPage = useCallback(
     async (nextPageIndex: number, options: LoadPageOptions) => {
       const requestId = ++activeRequestIdRef.current;
-      const trimmedQuery = deferredQuery.trim();
+      const trimmedQuery = debouncedQuery.trim();
+      const isFirstLoad = !hasLoadedOnceRef.current;
 
       if (options.refresh) {
         setIsRefreshing(true);
       } else if (options.append) {
         setIsLoadingMore(true);
-      } else {
+      } else if (isFirstLoad) {
         setIsLoadingInitial(true);
       }
 
@@ -120,33 +113,50 @@ export function useRequestsScreen(): UseRequestsScreenResult {
         setTotalCount(response.totalCount);
         setPageIndex(nextPageIndex);
         setError(null);
+        hasLoadedOnceRef.current = true;
       } catch (loadError) {
         if (requestId !== activeRequestIdRef.current) {
           return;
         }
 
-        setError(resolveErrorMessage(loadError, 'Unable to load requests.'));
-        if (!options.append) {
+        const message = resolveErrorMessage(loadError, 'Unable to load requests.');
+        setError(message);
+        if (!options.append && !hasLoadedOnceRef.current) {
           setItems([]);
           setTotalCount(0);
           setPageIndex(0);
+        } else {
+          toast.error(message);
         }
       } finally {
         if (requestId !== activeRequestIdRef.current) {
           return;
         }
 
-        setIsLoadingInitial(false);
+        if (isFirstLoad) {
+          setIsLoadingInitial(false);
+        }
         setIsLoadingMore(false);
         setIsRefreshing(false);
       }
     },
-    [deferredQuery, filters.datePreset, filters.statuses]
+    [debouncedQuery, filters.datePreset, filters.statuses]
   );
 
   useEffect(() => {
     void loadPage(0, { append: false });
   }, [loadPage]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const pendingFilters = consumePendingRequestsFilters();
+      if (pendingFilters) {
+        startTransition(() => {
+          setFilters(pendingFilters);
+        });
+      }
+    }, [])
+  );
 
   const applyFilters = useCallback((nextFilters: RequestsFilters) => {
     startTransition(() => {

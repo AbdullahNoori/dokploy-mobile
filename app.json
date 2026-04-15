@@ -16,7 +16,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.abdullah.dokploymobile",
-      "googleServicesFile": "./src/config/GoogleService-Info.plist"
+      "buildNumber": "1",
+      "usesNonExemptEncryption": false,
+      "googleServicesFile": "./src/config/GoogleService-Info.plist",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +41,12 @@
       "expo-secure-store",
       "react-native-enriched-markdown",
       "@react-native-firebase/app",
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "enableBackgroundRemoteNotifications": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

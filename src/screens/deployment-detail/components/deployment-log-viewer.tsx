@@ -142,7 +142,7 @@ export function DeploymentLogViewer({
   }, [lines.length, scrollToLatest, setFollowingState]);
 
   return (
-    <View className="gap-3">
+    <View className="flex-1 gap-3">
       <View className="bg-muted/20 rounded-xl px-1 py-1">
         <View className="flex-row items-center justify-between gap-3 px-3 py-2">
           <Text className="flex-1 text-base font-medium tracking-tight" numberOfLines={1}>
@@ -208,13 +208,14 @@ export function DeploymentLogViewer({
       ) : null}
 
       {lines.length > 0 ? (
-        <View className="relative">
-          <View className="border-border/80 bg-background/70 mx-1 overflow-hidden rounded-2xl border">
+        <View className="relative min-h-0 flex-1">
+          <View className="border-border/80 bg-background/70 mx-1 min-h-0 flex-1 overflow-hidden rounded-2xl border">
             <View className="bg-muted/35 mx-3 mt-3 mb-2 h-2 rounded-full" />
             <ScrollView
               ref={scrollRef}
-              className="max-h-[34rem] px-2"
+              className="min-h-0 flex-1 px-2"
               contentContainerClassName={cn('gap-2.5 px-1 py-2', !isFollowing && 'pb-16')}
+              nestedScrollEnabled
               onScroll={handleScroll}
               scrollEventThrottle={16}
               showsVerticalScrollIndicator>

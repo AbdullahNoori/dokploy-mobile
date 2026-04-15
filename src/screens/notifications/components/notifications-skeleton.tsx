@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/elements';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -6,6 +7,7 @@ import { Stack } from 'expo-router';
 
 export function NotificationsSkeleton() {
   const skeletonItems = ['alpha', 'beta', 'gamma', 'delta'];
+  const headerHeight = useHeaderHeight();
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={['left', 'top', 'right']}>
@@ -16,9 +18,10 @@ export function NotificationsSkeleton() {
           headerTransparent: true,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: 'transparent' },
+          headerBackButtonDisplayMode: 'minimal',
         }}
       />
-      <View className="flex-1 px-4 pt-2">
+      <View className="flex-1 px-4" style={{ paddingTop: headerHeight + 8 }}>
         <View className="gap-4 py-4">
           <View className="gap-2">
             <Skeleton className="h-4 w-64 rounded" />
