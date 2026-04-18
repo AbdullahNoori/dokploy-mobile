@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 
 type Props = {
-  onRetry: () => void;
+  onRetry: () => Promise<void> | void;
 };
 
 export function ProjectsErrorState({ onRetry }: Props) {
@@ -14,7 +14,7 @@ export function ProjectsErrorState({ onRetry }: Props) {
       <Text variant="muted" className="text-center">
         Please check your connection and try again.
       </Text>
-      <Button onPress={onRetry}>
+      <Button onPress={() => void onRetry()}>
         <Text>Retry</Text>
       </Button>
     </View>

@@ -3,6 +3,7 @@ import { FlatList, RefreshControl, View } from 'react-native';
 import { useUniwind } from 'uniwind';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { useHaptics } from '@/hooks/use-haptics';
 import { useProjectsScreen } from '@/hooks/use-projects-screen';
 import type { ProjectAllResponseBody } from '@/types/projects';
 import { THEME } from '@/lib/theme';
@@ -20,6 +21,7 @@ export default function ProjectsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+  const { impact, notifyError, notifySuccess } = useHaptics();
   const {
     query,
     setQuery,
@@ -53,10 +55,23 @@ export default function ProjectsScreen() {
     setIsRefreshing(true);
     try {
       await retry();
+      await notifySuccess();
+    } catch {
+      await notifyError();
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, retry]);
+  }, [isRefreshing, notifyError, notifySuccess, retry]);
+
+  const handleRetry = useCallback(async () => {
+    await impact();
+    try {
+      await retry();
+      await notifySuccess();
+    } catch {
+      await notifyError();
+    }
+  }, [impact, notifyError, notifySuccess, retry]);
 
   const listHeader = useMemo(
     () => (
@@ -77,7 +92,7 @@ export default function ProjectsScreen() {
   }
 
   if (isError) {
-    return <ProjectsErrorState onRetry={retry} />;
+    return <ProjectsErrorState onRetry={handleRetry} />;
   }
 
   if (isEmpty) {

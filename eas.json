@@ -31,7 +31,11 @@
   },
   "submit": {
     "production": {
-      "ios": {}
+      "ios": {
+        "appleId": "mosawerasefi13@gmail.com",
+        "ascAppId": "6762304667",
+        "appleTeamId": "GHT55XPTQ8"
+      }
     }
   }
 }
