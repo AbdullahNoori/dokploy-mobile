@@ -10,6 +10,7 @@ import {
   setPat,
   setServerUrl,
 } from '@/lib/http-config';
+import { clearStoredPushNotificationState } from '@/lib/push-notification-storage';
 
 export type AuthStatus = 'booting' | 'signedOut' | 'signedIn';
 
@@ -56,6 +57,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   logout: async () => {
     await clearCredentials();
+    clearStoredPushNotificationState();
     set({ status: 'signedOut' });
   },
 
@@ -68,6 +70,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     try {
       await clearCredentials();
+      clearStoredPushNotificationState();
       set({ status: 'signedOut' });
     } finally {
       set({ isHandlingUnauthorized: false });
