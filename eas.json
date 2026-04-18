@@ -1,10 +1,12 @@
 {
   "cli": {
     "version": ">= 18.0.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "remote",
+    "promptToConfigurePushNotifications": false
   },
   "build": {
     "development": {
+      "environment": "development",
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
@@ -12,12 +14,14 @@
       }
     },
     "preview": {
+      "environment": "preview",
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
       }
     },
     "production": {
+      "environment": "production",
       "distribution": "store",
       "autoIncrement": true,
       "ios": {

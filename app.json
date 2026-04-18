@@ -7,40 +7,50 @@
     "icon": "./assets/images/icon.png",
     "scheme": "dokploymobile",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
+      "icon": "./assets/images/icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "com.abdullah.dokploymobile",
       "buildNumber": "1",
       "usesNonExemptEncryption": false,
       "googleServicesFile": "./src/config/GoogleService-Info.plist",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": ["remote-notification", "remote-notification"],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#212121"
       },
       "package": "com.abdullah.dokploymobile",
       "googleServicesFile": "./src/config/google-services.json"
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/images/adaptive-icon.png",
+          "resizeMode": "contain",
+          "imageWidth": 120
+        }
+      ],
       "expo-secure-store",
       "react-native-enriched-markdown",
       "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "buildReactNativeFromSource": true
+          }
+        }
+      ],
       [
         "expo-notifications",
         {
@@ -51,6 +61,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b8003c5e-dda1-45ad-bd32-cd86157f1cfc"
+      }
+    },
+    "owner": "abdullah_0087"
   }
 }

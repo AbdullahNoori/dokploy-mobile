@@ -17,10 +17,10 @@ web-build/
 *.mobileprovision
 
 # React Native build folders
-android/
-android/**
-ios/
-ios/**
+/android/
+/android/**
+/ios/
+/ios/**
 
 
 # Metro

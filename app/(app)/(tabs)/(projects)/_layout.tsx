@@ -1,4 +1,3 @@
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Stack } from 'expo-router';
 
 export const unstable_settings = {
@@ -13,7 +12,6 @@ export default function ProjectsLayout() {
         headerTitle: 'Projects',
         headerShadowVisible: true,
         headerStyle: { backgroundColor: 'transparent' },
-        headerRight: () => <ThemeToggle />,
       }}>
       <Stack.Screen name="index" />
       <Stack.Screen
