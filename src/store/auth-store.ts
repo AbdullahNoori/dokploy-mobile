@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { readHaveRootAccess } from '@/api/user';
 import { ProjectAllResponse } from '@/types/projects';
 import { getRequest } from '@/lib/http';
 import {
@@ -13,6 +14,7 @@ import {
 import { clearStoredPushNotificationState } from '@/lib/push-notification-storage';
 
 export type AuthStatus = 'booting' | 'signedOut' | 'signedIn';
+export type RootAccessStatus = 'unknown' | 'checking' | 'allowed' | 'denied' | 'error';
 
 type LoginPayload = {
   serverUrl: string;
@@ -21,8 +23,11 @@ type LoginPayload = {
 
 type AuthStore = {
   status: AuthStatus;
+  rootAccessStatus: RootAccessStatus;
+  hasRootAccess: boolean;
   isHandlingUnauthorized: boolean;
   bootstrap: () => Promise<void>;
+  refreshRootAccess: () => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
   handleUnauthorized: () => Promise<void>;
@@ -30,6 +35,8 @@ type AuthStore = {
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   status: 'booting',
+  rootAccessStatus: 'unknown',
+  hasRootAccess: false,
   isHandlingUnauthorized: false,
 
   bootstrap: async () => {
@@ -37,8 +44,33 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       await initHttpConfig();
       const hasCredentials = Boolean(getServerUrl() && getPat());
       set({ status: hasCredentials ? 'signedIn' : 'signedOut' });
+
+      if (hasCredentials) {
+        await get().refreshRootAccess();
+      } else {
+        set({ rootAccessStatus: 'unknown', hasRootAccess: false });
+      }
     } catch {
-      set({ status: 'signedOut' });
+      set({ status: 'signedOut', rootAccessStatus: 'unknown', hasRootAccess: false });
+    }
+  },
+
+  refreshRootAccess: async () => {
+    if (!getServerUrl() || !getPat()) {
+      set({ rootAccessStatus: 'unknown', hasRootAccess: false });
+      return;
+    }
+
+    set({ rootAccessStatus: 'checking', hasRootAccess: false });
+
+    try {
+      const hasRootAccess = await readHaveRootAccess();
+      set({
+        rootAccessStatus: hasRootAccess ? 'allowed' : 'denied',
+        hasRootAccess,
+      });
+    } catch {
+      set({ rootAccessStatus: 'error', hasRootAccess: false });
     }
   },
 
@@ -52,13 +84,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     setServerUrl(serverUrl);
     await setPat(pat);
-    set({ status: 'signedIn' });
+    set({ status: 'signedIn', rootAccessStatus: 'unknown', hasRootAccess: false });
+    await get().refreshRootAccess();
   },
 
   logout: async () => {
     await clearCredentials();
     clearStoredPushNotificationState();
-    set({ status: 'signedOut' });
+    set({ status: 'signedOut', rootAccessStatus: 'unknown', hasRootAccess: false });
   },
 
   handleUnauthorized: async () => {
@@ -71,7 +104,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       await clearCredentials();
       clearStoredPushNotificationState();
-      set({ status: 'signedOut' });
+      set({ status: 'signedOut', rootAccessStatus: 'unknown', hasRootAccess: false });
     } finally {
       set({ isHandlingUnauthorized: false });
     }

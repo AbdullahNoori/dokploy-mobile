@@ -3,13 +3,17 @@ import { AxiosRequestConfig } from 'axios';
 import { HttpError } from './http-error';
 import { api } from './api-client';
 
+export type DokployRequestConfig = AxiosRequestConfig<any> & {
+  skipUnauthorizedHandler?: boolean;
+};
+
 /**
  * Create a http get request
  */
 export async function getRequest<T = unknown>(
   endpoint: string,
   params?: object,
-  config?: AxiosRequestConfig<any>
+  config?: DokployRequestConfig
 ): Promise<T> {
   try {
     const response = await api.get<T>(endpoint, {
@@ -28,7 +32,7 @@ export async function getRequest<T = unknown>(
 export async function postRequest<T = unknown>(
   endpoint: string,
   data?: object,
-  config?: AxiosRequestConfig<any>
+  config?: DokployRequestConfig
 ): Promise<T> {
   try {
     const response = await api.post<T>(endpoint, data, config);
@@ -44,7 +48,7 @@ export async function postRequest<T = unknown>(
 export async function putRequest<T = unknown>(
   endpoint: string,
   data?: object,
-  config?: AxiosRequestConfig<any>
+  config?: DokployRequestConfig
 ): Promise<T> {
   try {
     const response = await api.put<T>(endpoint, data, config);
@@ -60,7 +64,7 @@ export async function putRequest<T = unknown>(
 export async function patchRequest<T = unknown>(
   endpoint: string,
   data?: object,
-  config?: AxiosRequestConfig<any>
+  config?: DokployRequestConfig
 ): Promise<T> {
   try {
     const response = await api.patch<T>(endpoint, data, config);
@@ -76,7 +80,7 @@ export async function patchRequest<T = unknown>(
 export async function deleteRequest<T = unknown>(
   endpoint: string,
   params?: object,
-  config?: AxiosRequestConfig<any>
+  config?: DokployRequestConfig
 ): Promise<T> {
   try {
     const response = await api.delete<T>(endpoint, {

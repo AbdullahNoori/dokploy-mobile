@@ -64,6 +64,7 @@ function SettingsLinkRow({ href, icon, label }: SettingsLinkRowProps) {
 export default function SettingsScreen() {
   const { theme } = useUniwind();
   const logout = useAuthStore((state) => state.logout);
+  const hasRootAccess = useAuthStore((state) => state.hasRootAccess);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const isDarkMode = resolvedTheme === 'dark';
@@ -123,7 +124,9 @@ export default function SettingsScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <SettingsSectionLabel label="Operations" />
-            <SettingsLinkRow href="/(app)/web-servers" icon={GlobeIcon} label="Web Servers" />
+            {hasRootAccess ? (
+              <SettingsLinkRow href="/(app)/web-servers" icon={GlobeIcon} label="Web Servers" />
+            ) : null}
             <SettingsLinkRow href="/(app)/requests" icon={ShieldIcon} label="Requests" />
           </View>
 
@@ -140,7 +143,9 @@ export default function SettingsScreen() {
               </View>
               <Switch checked={isDarkMode} onCheckedChange={handleThemeChange} />
             </Pressable>
-            <SettingsLinkRow href="/(app)/notifications" icon={BellIcon} label="Notifications" />
+            {hasRootAccess ? (
+              <SettingsLinkRow href="/(app)/notifications" icon={BellIcon} label="Notifications" />
+            ) : null}
           </View>
 
           <View className="gap-2 pt-2">

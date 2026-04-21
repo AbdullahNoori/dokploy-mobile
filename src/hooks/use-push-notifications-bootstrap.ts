@@ -6,9 +6,17 @@ import {
   subscribeToNotificationResponses,
   subscribeToPushTokenRefresh,
 } from '@/lib/push-notifications';
+import { useAuthStore } from '@/store/auth-store';
 
 export function usePushNotificationsBootstrap() {
+  const hasRootAccess = useAuthStore((state) => state.hasRootAccess);
+
   useEffect(() => {
+    if (!hasRootAccess) {
+      clearStoredPushNotificationState();
+      return;
+    }
+
     const unsubscribeNotificationResponses = subscribeToNotificationResponses();
     const unsubscribeTokenRefresh = subscribeToPushTokenRefresh();
 
@@ -19,5 +27,5 @@ export function usePushNotificationsBootstrap() {
       unsubscribeTokenRefresh();
       clearStoredPushNotificationState();
     };
-  }, []);
+  }, [hasRootAccess]);
 }

@@ -37,8 +37,9 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error?.response?.status;
+    const skipUnauthorizedHandler = Boolean(error?.config?.skipUnauthorizedHandler);
 
-    if (status === 401 || status === 403) {
+    if ((status === 401 || status === 403) && !skipUnauthorizedHandler) {
       try {
         const { useAuthStore } = await import('@/store/auth-store');
         await useAuthStore.getState().handleUnauthorized();
