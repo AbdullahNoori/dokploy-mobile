@@ -39,7 +39,7 @@ export function ItemDetailDeployments({ deployments, itemId }: Props) {
             className="bg-card border-border/80 rounded-2xl border px-4 py-3 active:opacity-90"
             onPress={() =>
               router.push({
-                pathname: '/item/[itemId]/deployment/[deploymentId]',
+                pathname: '/(app)/modals/deployment-detail',
                 params: {
                   itemId,
                   deploymentId: deployment.id,

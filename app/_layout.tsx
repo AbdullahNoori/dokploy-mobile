@@ -47,7 +47,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={NAV_THEME[resolvedTheme]}>
         <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{ headerShown: false, headerBackButtonDisplayMode: 'minimal' }}>
           <Stack.Protected guard={status === 'signedIn'}>
             <Stack.Screen name="(app)" options={{ headerShown: false }} />
           </Stack.Protected>

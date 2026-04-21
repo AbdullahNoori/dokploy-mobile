@@ -15,9 +15,7 @@ const CARD_HEIGHT = 92;
 
 export default function ProjectDetailScreen() {
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
-  const { project, items, isLoading, isError, retry } = useProjectDetailScreen(
-    projectId ?? ''
-  );
+  const { project, items, isLoading, isError, retry } = useProjectDetailScreen(projectId ?? '');
 
   const renderItem = useCallback(
     ({ item }: { item: ProjectItem }) => (
@@ -51,7 +49,9 @@ export default function ProjectDetailScreen() {
 
   return (
     <SafeAreaView className="bg-background flex-1 px-4">
-      <Stack.Screen options={{ title: project?.name ?? 'Project' }} />
+      <Stack.Screen
+        options={{ title: project?.name ?? 'Project', headerBackButtonDisplayMode: 'minimal' }}
+      />
       <View className="flex-1 pt-2">
         <FlatList
           data={items}

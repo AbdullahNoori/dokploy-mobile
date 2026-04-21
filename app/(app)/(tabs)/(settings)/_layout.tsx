@@ -4,6 +4,7 @@ export default function SettingsLayout() {
   return (
     <Stack
       screenOptions={{
+        headerBackButtonDisplayMode: 'minimal',
         headerTitle: 'Settings',
       }}
     />

@@ -127,7 +127,7 @@ export function ItemDetailDomains({
           className="gap-2"
           onPress={() =>
             router.push({
-              pathname: '/item/[itemId]/domain/create',
+              pathname: '/(app)/modals/project-domain-new',
               params: {
                 itemId,
                 itemType,
@@ -158,7 +158,7 @@ export function ItemDetailDomains({
                   disabled={isBusy}
                   onPress={() =>
                     router.push({
-                      pathname: '/item/[itemId]/domain/create',
+                      pathname: '/(app)/modals/project-domain-new',
                       params: {
                         itemId,
                         itemType,

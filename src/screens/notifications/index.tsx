@@ -27,7 +27,7 @@ export default function NotificationsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const openCreateSheet = useCallback(() => {
-    router.push('/(app)/notification-create');
+    router.push('/(app)/modals/notification-new');
   }, [router]);
 
   const notifications = useMemo<Array<NotificationAllResponseBody>>(() => {

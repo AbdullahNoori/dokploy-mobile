@@ -21,7 +21,7 @@ export default function RequestsScreen() {
 
   const openFilters = useCallback(() => {
     router.push({
-      pathname: '/(app)/requests-filters',
+      pathname: '/(app)/modals/requests-filters',
       params: buildRequestsFilterRouteParams(filters.value),
     });
   }, [filters.value, router]);

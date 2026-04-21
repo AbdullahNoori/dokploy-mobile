@@ -112,7 +112,9 @@ export default function ItemDetailScreen() {
 
   return (
     <SafeAreaView className="bg-background flex-1 px-4 pt-2" edges={['left', 'right']}>
-      <Stack.Screen options={{ title: summary?.title ?? 'Service' }} />
+      <Stack.Screen
+        options={{ title: summary?.title ?? 'Service', headerBackButtonDisplayMode: 'minimal' }}
+      />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.select({ ios: 'padding', android: undefined })}>

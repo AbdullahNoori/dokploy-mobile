@@ -64,7 +64,7 @@ export default function WebServersScreen() {
   const handleEditBackup = useCallback(
     (backup: WebServerBackup) => {
       router.push({
-        pathname: '/web-server-backup-edit',
+        pathname: '/(app)/modals/web-server-backup-edit',
         params: buildWebServerBackupEditParams(backup),
       });
     },

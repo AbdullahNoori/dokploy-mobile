@@ -27,7 +27,7 @@ export const ApplicationsCard = memo(function ApplicationsCard({ application, pr
   return (
     <Link
       href={{
-        pathname: '/item/[itemId]',
+        pathname: '/[projectId]/items/[itemId]',
         params: {
           itemId: application.id,
           itemType: application.type,

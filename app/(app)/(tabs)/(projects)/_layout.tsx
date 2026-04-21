@@ -8,42 +8,13 @@ export default function ProjectsLayout() {
   return (
     <Stack
       screenOptions={{
+        headerBackButtonDisplayMode: 'minimal',
         headerTransparent: true,
         headerTitle: 'Projects',
         headerShadowVisible: true,
         headerStyle: { backgroundColor: 'transparent' },
       }}>
       <Stack.Screen name="index" />
-      <Stack.Screen
-        name="item/[itemId]/domain/create"
-        options={{
-          presentation: 'formSheet',
-          sheetAllowedDetents: [0.9, 0.98],
-          sheetInitialDetentIndex: 0,
-          sheetGrabberVisible: true,
-          sheetCornerRadius: 24,
-          sheetLargestUndimmedDetentIndex: 0,
-          headerTransparent: true,
-          headerTitle: 'Add Domain',
-          headerShadowVisible: false,
-          headerRight: () => null,
-        }}
-      />
-      <Stack.Screen
-        name="item/[itemId]/deployment/[deploymentId]"
-        options={{
-          presentation: 'formSheet',
-          sheetAllowedDetents: [0.9, 0.98],
-          sheetInitialDetentIndex: 0,
-          sheetGrabberVisible: true,
-          sheetCornerRadius: 24,
-          sheetLargestUndimmedDetentIndex: 0,
-          headerTransparent: true,
-          headerTitle: 'Deployment',
-          headerShadowVisible: false,
-          headerRight: () => null,
-        }}
-      />
     </Stack>
   );
 }
