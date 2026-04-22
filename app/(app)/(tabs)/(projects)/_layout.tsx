@@ -10,11 +10,10 @@ export default function ProjectsLayout() {
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
         headerTransparent: true,
-        headerTitle: 'Projects',
         headerShadowVisible: true,
         headerStyle: { backgroundColor: 'transparent' },
       }}>
-      <Stack.Screen name="index" />
+      <Stack.Screen name="index" options={{ title: 'Projects' }} />
     </Stack>
   );
 }

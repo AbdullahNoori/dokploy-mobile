@@ -19,7 +19,15 @@ export const ProjectsCard = memo(function ProjectsCard({ project }: Props) {
   const { impact } = useHaptics();
 
   return (
-    <Link href={`/${project.projectId}`} asChild>
+    <Link
+      href={{
+        pathname: '/[projectId]',
+        params: {
+          projectId: project.projectId,
+          projectName: project.name,
+        },
+      }}
+      asChild>
       <Pressable
         onPressIn={() => {
           void impact();

@@ -40,7 +40,6 @@ export default function ModalsLayout() {
       <Stack.Screen
         name="deployment-detail"
         options={{
-          headerTitle: 'Deployment',
           headerRight: () => null,
         }}
       />

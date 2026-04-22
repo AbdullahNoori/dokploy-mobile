@@ -1,11 +1,17 @@
 import { ScrollView } from 'react-native';
+import { Stack } from 'expo-router';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function ProjectDetailSkeleton() {
+type Props = {
+  title: string;
+};
+
+export function ProjectDetailSkeleton({ title }: Props) {
   return (
     <SafeAreaView className="bg-background flex-1">
+      <Stack.Screen options={{ title }} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerClassName="px-4 pt-2 gap-3"

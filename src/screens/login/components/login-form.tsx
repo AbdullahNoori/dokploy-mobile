@@ -1,20 +1,16 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  View,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { useUniwind } from 'uniwind';
 
+import DokployLogoDark from '@/assets/logo/dokploy-dark.svg';
+import DokployLogo from '@/assets/logo/dokploy.svg';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import DokployLogoDark from '@/assets/logo/dokploy-dark.svg';
-import DokployLogo from '@/assets/logo/dokploy.svg';
+import { useHaptics } from '@/hooks/use-haptics';
 import { THEME } from '@/lib/theme';
-import { useUniwind } from 'uniwind';
+
+import PatHelpSheet from './pat-help-sheet';
 
 type LoginFormProps = {
   serverUrl: string;
@@ -33,10 +29,21 @@ export default function LoginForm({
   onChangePat,
   onSubmit,
 }: LoginFormProps) {
-  const [isPatVisible, setIsPatVisible] = useState(false);
+  const [isPatHelpOpen, setIsPatHelpOpen] = useState(false);
   const { theme } = useUniwind();
+  const { selection } = useHaptics();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const Logo = resolvedTheme === 'dark' ? DokployLogoDark : DokployLogo;
+
+  const openPatHelp = () => {
+    void selection();
+    setIsPatHelpOpen(true);
+  };
+
+  const handlePatHelpOpenChange = (open: boolean) => {
+    void selection();
+    setIsPatHelpOpen(open);
+  };
 
   return (
     <KeyboardAvoidingView
@@ -79,17 +86,21 @@ export default function LoginForm({
               <Text className="font-medium">Personal Access Token</Text>
               <View className="relative">
                 <Input
-                  className="bg-input h-12 rounded-lg px-3 pr-12"
+                  className="bg-input h-12 rounded-lg px-3"
                   placeholder="Enter your token"
                   value={pat}
                   onChangeText={onChangePat}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  secureTextEntry
                   textContentType="password"
                   returnKeyType="done"
                   onSubmitEditing={onSubmit}
                 />
               </View>
+              <Button variant="link" className="h-11 self-start px-0 py-0" onPress={openPatHelp}>
+                <Text>Need a personal access token?</Text>
+              </Button>
             </View>
           </View>
 
@@ -108,6 +119,7 @@ export default function LoginForm({
           </View>
         </View>
       </ScrollView>
+      <PatHelpSheet open={isPatHelpOpen} onOpenChange={handlePatHelpOpenChange} />
     </KeyboardAvoidingView>
   );
 }

@@ -26,8 +26,9 @@ import { ItemDetailSkeleton } from './components/item-detail-skeleton';
 import { ItemDetailTabs, type TabKey } from './components/item-detail-tabs';
 
 export default function ItemDetailScreen() {
-  const { itemId, itemType } = useLocalSearchParams<{
+  const { itemId, itemName, itemType } = useLocalSearchParams<{
     itemId: string;
+    itemName?: string;
     itemType?: ProjectItemType;
   }>();
 
@@ -121,10 +122,12 @@ export default function ItemDetailScreen() {
   const isDeploymentRunning = isApplication
     ? deployments.some((deployment) => (deployment.status ?? '').toLowerCase() === 'running')
     : false;
+  const title = summary?.title ?? itemName ?? 'Service';
 
   if (!itemId || !normalizedType) {
     return (
       <SafeAreaView className="bg-background flex-1 px-4">
+        <Stack.Screen options={{ title, headerBackButtonDisplayMode: 'minimal' }} />
         <View className="flex-1 items-center justify-center">
           <Text variant="h4">Missing item information</Text>
           <Text variant="muted" className="mt-2 text-center">
@@ -136,23 +139,26 @@ export default function ItemDetailScreen() {
   }
 
   if (isLoading) {
-    return <ItemDetailSkeleton />;
+    return <ItemDetailSkeleton title={title} />;
   }
 
   if (isError) {
     return (
-      <ItemDetailErrorState
-        onRetry={() => {
-          void handleRetry();
-        }}
-      />
+      <>
+        <Stack.Screen options={{ title, headerBackButtonDisplayMode: 'minimal' }} />
+        <ItemDetailErrorState
+          onRetry={() => {
+            void handleRetry();
+          }}
+        />
+      </>
     );
   }
 
   return (
     <SafeAreaView className="bg-background flex-1 px-4 pt-2" edges={['left', 'right']}>
       <Stack.Screen
-        options={{ title: summary?.title ?? 'Service', headerBackButtonDisplayMode: 'minimal' }}
+        options={{ title, headerBackButtonDisplayMode: 'minimal' }}
       />
       <KeyboardAvoidingView
         className="flex-1"

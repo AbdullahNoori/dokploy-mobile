@@ -15,9 +15,13 @@ import { ProjectDetailSkeleton } from './components/project-detail-skeleton';
 const CARD_HEIGHT = 92;
 
 export default function ProjectDetailScreen() {
-  const { projectId } = useLocalSearchParams<{ projectId: string }>();
+  const { projectId, projectName } = useLocalSearchParams<{
+    projectId: string;
+    projectName?: string;
+  }>();
   const { project, items, isLoading, isError, retry } = useProjectDetailScreen(projectId ?? '');
   const { impact, notifyError, notifySuccess } = useHaptics();
+  const title = project?.name ?? projectName ?? 'Project';
 
   const handleRetry = useCallback(async () => {
     await impact();
@@ -48,27 +52,35 @@ export default function ProjectDetailScreen() {
   );
 
   if (isLoading) {
-    return <ProjectDetailSkeleton />;
+    return <ProjectDetailSkeleton title={title} />;
   }
 
   if (isError) {
     return (
-      <ProjectDetailErrorState
-        onRetry={() => {
-          void handleRetry();
-        }}
-      />
+      <>
+        <Stack.Screen options={{ title, headerBackButtonDisplayMode: 'minimal' }} />
+        <ProjectDetailErrorState
+          onRetry={() => {
+            void handleRetry();
+          }}
+        />
+      </>
     );
   }
 
   if (!items.length) {
-    return <ProjectDetailEmptyState />;
+    return (
+      <>
+        <Stack.Screen options={{ title, headerBackButtonDisplayMode: 'minimal' }} />
+        <ProjectDetailEmptyState />
+      </>
+    );
   }
 
   return (
     <SafeAreaView className="bg-background flex-1 px-4">
       <Stack.Screen
-        options={{ title: project?.name ?? 'Project', headerBackButtonDisplayMode: 'minimal' }}
+        options={{ title, headerBackButtonDisplayMode: 'minimal' }}
       />
       <View className="flex-1 pt-2">
         <FlatList

@@ -4,10 +4,14 @@ import { Stack } from 'expo-router';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function ItemDetailSkeleton() {
+type Props = {
+  title?: string;
+};
+
+export function ItemDetailSkeleton({ title = 'Loading...' }: Props) {
   return (
     <SafeAreaView className="bg-background flex-1 px-4" edges={['left', 'right']}>
-      <Stack.Screen options={{ title: 'Loading...' }} />
+      <Stack.Screen options={{ title }} />
       <ScrollView showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="automatic">
         <View className="pt-2 gap-3">
           <Skeleton className="h-7 w-40 rounded" />

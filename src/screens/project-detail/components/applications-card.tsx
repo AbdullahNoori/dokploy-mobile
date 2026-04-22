@@ -32,6 +32,7 @@ export const ApplicationsCard = memo(function ApplicationsCard({ application, pr
         pathname: '/[projectId]/items/[itemId]',
         params: {
           itemId: application.id,
+          itemName: application.name,
           itemType: application.type,
           projectId,
         },
