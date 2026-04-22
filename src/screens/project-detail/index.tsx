@@ -3,6 +3,7 @@ import { FlatList, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { useHaptics } from '@/hooks/use-haptics';
 import { useProjectDetailScreen } from '@/hooks/use-project-detail-screen';
 import type { ProjectItem } from '@/types/projects';
 
@@ -16,6 +17,17 @@ const CARD_HEIGHT = 92;
 export default function ProjectDetailScreen() {
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
   const { project, items, isLoading, isError, retry } = useProjectDetailScreen(projectId ?? '');
+  const { impact, notifyError, notifySuccess } = useHaptics();
+
+  const handleRetry = useCallback(async () => {
+    await impact();
+    try {
+      await retry();
+      await notifySuccess();
+    } catch {
+      await notifyError();
+    }
+  }, [impact, notifyError, notifySuccess, retry]);
 
   const renderItem = useCallback(
     ({ item }: { item: ProjectItem }) => (
@@ -40,7 +52,13 @@ export default function ProjectDetailScreen() {
   }
 
   if (isError) {
-    return <ProjectDetailErrorState onRetry={retry} />;
+    return (
+      <ProjectDetailErrorState
+        onRetry={() => {
+          void handleRetry();
+        }}
+      />
+    );
   }
 
   if (!items.length) {

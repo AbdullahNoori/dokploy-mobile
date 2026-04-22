@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import type { WebServerCertificateType, WebServerSettings } from '@/types/web-servers';
 
 import { WebServersErrorState } from './web-servers-error';
@@ -52,8 +53,19 @@ export function ServerDomainCard({
   onRetry,
   onSave,
 }: Props) {
+  const { selection } = useHaptics();
   const showCertificateProvider =
     value.https || value.certificateType === SettingsAssignDomainServerCertificateType.None;
+
+  const handleHttpsChange = (nextValue: boolean) => {
+    void selection();
+    onChangeHttps(nextValue);
+  };
+
+  const handleCertificateTypeChange = (nextValue: WebServerCertificateType) => {
+    void selection();
+    onChangeCertificateType(nextValue);
+  };
 
   return (
     <View className="bg-card border-border/80 overflow-hidden rounded-3xl border">
@@ -127,7 +139,7 @@ export function ServerDomainCard({
             </View>
             <Switch
               checked={value.https}
-              onCheckedChange={onChangeHttps}
+              onCheckedChange={handleHttpsChange}
               accessibilityLabel="HTTPS"
             />
           </View>
@@ -141,7 +153,7 @@ export function ServerDomainCard({
                     key={option.value}
                     size="sm"
                     variant={value.certificateType === option.value ? 'default' : 'outline'}
-                    onPress={() => onChangeCertificateType(option.value)}
+                    onPress={() => handleCertificateTypeChange(option.value)}
                     className="px-4">
                     <Text>{option.label}</Text>
                   </Button>

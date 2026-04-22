@@ -18,6 +18,7 @@ import { postgresSaveEnvironment } from '@/api/postgres';
 import { redisSaveEnvironment } from '@/api/redis';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { HttpError } from '@/lib/http-error';
 import { THEME } from '@/lib/theme';
 import { cn, isErrorResponse } from '@/lib/utils';
@@ -69,6 +70,7 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
   const [lastSaved, setLastSaved] = useState('');
   const [editorHeight, setEditorHeight] = useState(180);
   const [isSaving, setIsSaving] = useState(false);
+  const { impact, notifyError, notifySuccess, selection } = useHaptics();
 
   const envValue = useMemo(() => {
     if (!data) return '';
@@ -114,11 +116,13 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
   const canSave = Boolean(idValue) && !isCompose;
 
   const handleReset = useCallback(() => {
+    void selection();
     setDraft(lastSaved);
-  }, [lastSaved]);
+  }, [lastSaved, selection]);
 
   const handleSave = useCallback(async () => {
     if (!canSave || !isDirty || isSaving) return;
+    await impact();
     setIsSaving(true);
     try {
       let result: unknown = null;
@@ -169,19 +173,33 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
       }
 
       if (isErrorResponse(result)) {
+        await notifyError();
         toast.error(result.message ?? result.error ?? 'Unable to save environment.');
         return;
       }
 
+      await notifySuccess();
       toast.success('Environment saved.');
       setLastSaved(draft);
       await onRefresh();
     } catch (error) {
+      await notifyError();
       toast.error(resolveErrorMessage(error, 'Unable to save environment.'));
     } finally {
       setIsSaving(false);
     }
-  }, [canSave, draft, idValue, isDirty, isSaving, itemType, onRefresh]);
+  }, [
+    canSave,
+    draft,
+    idValue,
+    impact,
+    isDirty,
+    isSaving,
+    itemType,
+    notifyError,
+    notifySuccess,
+    onRefresh,
+  ]);
 
   if (!data) {
     return (
@@ -214,7 +232,12 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
               return (
                 <Pressable
                   key={value}
-                  onPress={() => setMode(value)}
+                  onPress={() => {
+                    if (mode !== value) {
+                      void selection();
+                    }
+                    setMode(value);
+                  }}
                   className={cn(
                     'rounded-md px-3 py-1.5',
                     isActive ? 'bg-background' : 'opacity-60'

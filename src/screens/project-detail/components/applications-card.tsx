@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { formatRelativeTime } from '@/lib/utils';
 import type { ProjectItem } from '@/types/projects';
 import { GlobeIcon } from 'lucide-react-native';
@@ -23,6 +24,7 @@ const STATUS_CLASS: Record<string, string> = {
 
 export const ApplicationsCard = memo(function ApplicationsCard({ application, projectId }: Props) {
   const statusClass = STATUS_CLASS[application.status ?? ''] ?? 'bg-muted-foreground/40';
+  const { impact } = useHaptics();
 
   return (
     <Link
@@ -35,7 +37,11 @@ export const ApplicationsCard = memo(function ApplicationsCard({ application, pr
         },
       }}
       asChild>
-      <Pressable className="bg-card border-border/80 rounded-2xl border px-4 py-4">
+      <Pressable
+        onPressIn={() => {
+          void impact();
+        }}
+        className="bg-card border-border/80 rounded-2xl border px-4 py-4">
         <View className="flex-row items-center justify-between">
           <Text className="text-base font-semibold">{application.name}</Text>
           <View className="flex-row items-center gap-3">

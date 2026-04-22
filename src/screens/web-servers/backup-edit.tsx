@@ -12,6 +12,7 @@ import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import {
   parseWebServerBackupEditParams,
   type WebServerBackupEditRouteParams,
@@ -56,6 +57,7 @@ export default function WebServerBackupEditScreen() {
   const [prefix, setPrefix] = useState(routeValues.prefix);
   const [keepLatestCount, setKeepLatestCount] = useState(routeValues.keepLatestCount);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { impact, notifyError, notifySuccess, selection } = useHaptics();
 
   const scheduleOptions = useMemo(() => {
     const current = initialValues.schedule.trim();
@@ -128,9 +130,13 @@ export default function WebServerBackupEditScreen() {
 
   const handleSubmit = async () => {
     if (validationMessage || isSubmitting || !isDirty) {
+      if (validationMessage) {
+        await notifyError();
+      }
       return;
     }
 
+    await impact();
     setIsSubmitting(true);
 
     const payload: WebServerBackupUpdateRequest = {
@@ -149,17 +155,25 @@ export default function WebServerBackupEditScreen() {
     try {
       const result = await updateWebServerBackup(payload);
       if (isErrorResponse(result)) {
+        await notifyError();
         toast.error(result.message ?? result.error ?? 'Unable to update backup.');
         return;
       }
 
+      await notifySuccess();
       toast.success('Backup updated.');
       router.back();
     } catch (error) {
+      await notifyError();
       toast.error(resolveErrorMessage(error, 'Unable to update backup.'));
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEnabledChange = (nextValue: boolean) => {
+    void selection();
+    setEnabled(nextValue);
   };
 
   return (
@@ -244,7 +258,7 @@ export default function WebServerBackupEditScreen() {
             </View>
             <Switch
               checked={enabled}
-              onCheckedChange={setEnabled}
+              onCheckedChange={handleEnabledChange}
               accessibilityLabel="Enabled"
             />
           </View>

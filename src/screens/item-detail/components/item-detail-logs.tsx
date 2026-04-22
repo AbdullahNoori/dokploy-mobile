@@ -6,6 +6,7 @@ import { useUniwind } from 'uniwind';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Text } from '@/components/ui/text';
 import { useContainerLogSocket } from '@/hooks/use-container-log-socket';
+import { useHaptics } from '@/hooks/use-haptics';
 import { THEME } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
@@ -348,6 +349,7 @@ export function ItemDetailLogs({
 }: Props) {
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+  const { impact } = useHaptics();
   const palette = useMemo(
     () => ({
       bg: resolvedTheme === 'dark' ? 'hsl(0 0% 6%)' : 'hsl(60 10% 98%)',
@@ -390,6 +392,11 @@ export function ItemDetailLogs({
     containerId: selectedContainerId,
     enabled: Boolean(selectedContainerId),
   });
+
+  const handleReconnect = () => {
+    void impact();
+    reconnect();
+  };
 
   const connectionLabel = isConnected
     ? 'Live'
@@ -487,7 +494,7 @@ export function ItemDetailLogs({
               <Pressable
                 className="rounded-md border px-2 py-1 active:opacity-80"
                 style={{ borderColor: palette.border, backgroundColor: palette.chrome }}
-                onPress={reconnect}>
+                onPress={handleReconnect}>
                 <Text
                   className="font-mono text-[10px] tracking-[1.4px] uppercase"
                   style={{ color: palette.text }}>

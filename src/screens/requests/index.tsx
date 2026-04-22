@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Stack, useRouter } from 'expo-router';
 
+import { useHaptics } from '@/hooks/use-haptics';
 import { useRequestsScreen } from '@/hooks/use-requests-screen';
 import { buildRequestsFilterRouteParams } from '@/lib/requests-filter-route';
 
@@ -18,13 +19,34 @@ import { RequestsSkeleton } from './components/requests-skeleton';
 export default function RequestsScreen() {
   const router = useRouter();
   const { search, filters, list } = useRequestsScreen();
+  const { impact, notifyError, notifySuccess } = useHaptics();
 
-  const openFilters = useCallback(() => {
+  const openFilters = useCallback(async () => {
+    await impact();
     router.push({
       pathname: '/(app)/modals/requests-filters',
       params: buildRequestsFilterRouteParams(filters.value),
     });
-  }, [filters.value, router]);
+  }, [filters.value, impact, router]);
+
+  const handleRefresh = useCallback(async () => {
+    const didRefresh = await list.refresh();
+    if (didRefresh) {
+      await notifySuccess();
+    } else {
+      await notifyError();
+    }
+  }, [list, notifyError, notifySuccess]);
+
+  const handleRetry = useCallback(async () => {
+    await impact();
+    const didRetry = await list.retry();
+    if (didRetry) {
+      await notifySuccess();
+    } else {
+      await notifyError();
+    }
+  }, [impact, list, notifyError, notifySuccess]);
 
   const listHeader = useMemo(
     () => (
@@ -80,7 +102,7 @@ export default function RequestsScreen() {
         isRefreshing={list.isRefreshing}
         isLoadingMore={list.isLoadingMore}
         onRefresh={() => {
-          void list.refresh();
+          void handleRefresh();
         }}
         onEndReached={() => {
           void list.loadMore();
@@ -90,7 +112,7 @@ export default function RequestsScreen() {
             <RequestsErrorState
               message={list.error ?? 'Unable to load requests.'}
               onRetry={() => {
-                void list.retry();
+                void handleRetry();
               }}
             />
           ) : (

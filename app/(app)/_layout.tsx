@@ -1,4 +1,5 @@
 import { usePushNotificationsBootstrap } from '@/hooks/use-push-notifications-bootstrap';
+import { sheetPresentationOptions } from '@/navigation/screen-options';
 import { useAuthStore } from '@/store/auth-store';
 import { Stack } from 'expo-router';
 
@@ -10,7 +11,13 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false, headerBackButtonDisplayMode: 'minimal' }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="modals" />
+      <Stack.Screen
+        name="modals"
+        options={{
+          ...sheetPresentationOptions,
+          headerShown: false,
+        }}
+      />
       <Stack.Protected guard={hasRootAccess}>
         <Stack.Screen
           name="notifications"

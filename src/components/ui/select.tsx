@@ -3,6 +3,7 @@ import { Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { Check, ChevronDown } from 'lucide-react-native';
 
 import { cn } from '@/lib/utils';
+import { useHaptics } from '@/hooks/use-haptics';
 import { Icon } from './icon';
 import { Text } from './text';
 
@@ -31,8 +32,10 @@ export function Select({
   const [open, setOpen] = React.useState(false);
   const triggerRef = React.useRef<View>(null);
   const [dropdownPosition, setDropdownPosition] = React.useState({ top: 0, left: 0, width: 0 });
+  const { selection } = useHaptics();
 
   const handleOpen = () => {
+    void selection();
     triggerRef.current?.measure((x, y, width, height, pageX, pageY) => {
       setDropdownPosition({
         top: pageY + height + 4,
@@ -118,18 +121,19 @@ export function Select({
                   <Pressable
                     key={option.value}
                     onPress={() => {
+                      void selection();
                       onValueChange?.(option.value);
                       setOpen(false);
                     }}
                     className={cn(
-                      'flex flex-row items-center px-2 py-2.5 active:bg-accent dark:active:bg-accent/50',
+                      'active:bg-accent dark:active:bg-accent/50 flex flex-row items-center px-2 py-2.5',
                       Platform.select({ web: 'hover:bg-accent dark:hover:bg-accent/50' }),
                       isSelected && 'bg-accent/30 dark:bg-accent/30'
                     )}>
                     <View className="w-6 items-start justify-center pl-1">
                       {isSelected && <Icon as={Check} className="text-foreground size-4" />}
                     </View>
-                    <Text className="flex-1 text-base text-foreground sm:text-sm">
+                    <Text className="text-foreground flex-1 text-base sm:text-sm">
                       {option.label}
                     </Text>
                   </Pressable>

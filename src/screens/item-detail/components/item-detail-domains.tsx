@@ -9,6 +9,7 @@ import { domainDelete, domainValidate } from '@/api/domain';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { HttpError } from '@/lib/http-error';
 import { THEME } from '@/lib/theme';
 import { isErrorResponse } from '@/lib/utils';
@@ -51,6 +52,7 @@ export function ItemDetailDomains({
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const [activeDomainId, setActiveDomainId] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<'validate' | 'delete' | null>(null);
+  const { impact, notifyError, notifySuccess } = useHaptics();
 
   const isBusy = activeDomainId !== null;
   const secondarySpinner = THEME[resolvedTheme].secondaryForeground;
@@ -62,46 +64,93 @@ export function ItemDetailDomains({
   const handleValidate = useCallback(
     async (domain: ApplicationOneDomain) => {
       if (isBusy) return;
+      await impact();
       setActiveDomainId(domain.domainId);
       setActiveAction('validate');
       try {
         const result = await domainValidate({ domain: domain.host });
         if (isErrorResponse(result)) {
+          await notifyError();
           toast.error(result.message ?? result.error ?? 'Unable to validate DNS.');
           return;
         }
+        await notifySuccess();
         toast.success('DNS validated.');
       } catch (error) {
+        await notifyError();
         toast.error(resolveErrorMessage(error, 'Unable to validate DNS.'));
       } finally {
         setActiveDomainId(null);
         setActiveAction(null);
       }
     },
-    [isBusy]
+    [impact, isBusy, notifyError, notifySuccess]
   );
 
   const handleDelete = useCallback(
     async (domain: ApplicationOneDomain) => {
       if (isBusy) return;
+      await impact();
       setActiveDomainId(domain.domainId);
       setActiveAction('delete');
       try {
         const result = await domainDelete({ domainId: domain.domainId });
         if (isErrorResponse(result)) {
+          await notifyError();
           toast.error(result.message ?? result.error ?? 'Unable to delete domain.');
           return;
         }
+        await notifySuccess();
         toast.success('Domain deleted.');
         await onRefresh();
       } catch (error) {
+        await notifyError();
         toast.error(resolveErrorMessage(error, 'Unable to delete domain.'));
       } finally {
         setActiveDomainId(null);
         setActiveAction(null);
       }
     },
-    [isBusy, onRefresh]
+    [impact, isBusy, notifyError, notifySuccess, onRefresh]
+  );
+
+  const openCreateDomain = useCallback(async () => {
+    await impact();
+    router.push({
+      pathname: '/(app)/modals/project-domain-new',
+      params: {
+        itemId,
+        itemType,
+        applicationId,
+        defaultPort: defaultPort ? String(defaultPort) : '',
+      },
+    });
+  }, [applicationId, defaultPort, impact, itemId, itemType, router]);
+
+  const openEditDomain = useCallback(
+    async (domain: ApplicationOneDomain) => {
+      await impact();
+      router.push({
+        pathname: '/(app)/modals/project-domain-new',
+        params: {
+          itemId,
+          itemType,
+          applicationId,
+          defaultPort: defaultPort ? String(defaultPort) : '',
+          mode: 'edit',
+          domainId: domain.domainId,
+          host: domain.host,
+          path: domain.path ?? '/',
+          internalPath: domain.internalPath ?? '/',
+          stripPath: String(domain.stripPath),
+          https: String(domain.https),
+          port: domain.port ? String(domain.port) : '',
+          certificateType: domain.certificateType,
+          domainType: domain.domainType ?? '',
+        },
+      });
+    },
+    [applicationId, defaultPort, impact, itemId, itemType, router]
   );
 
   if (!isApplication) {
@@ -125,17 +174,9 @@ export function ItemDetailDomains({
         <Button
           size="sm"
           className="gap-2"
-          onPress={() =>
-            router.push({
-              pathname: '/(app)/modals/project-domain-new',
-              params: {
-                itemId,
-                itemType,
-                applicationId,
-                defaultPort: defaultPort ? String(defaultPort) : '',
-              },
-            })
-          }>
+          onPress={() => {
+            void openCreateDomain();
+          }}>
           <Icon as={Plus} className="text-primary-foreground size-4" />
         </Button>
       </View>
@@ -156,27 +197,9 @@ export function ItemDetailDomains({
                   variant="secondary"
                   className="gap-1.5 px-2.5"
                   disabled={isBusy}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/(app)/modals/project-domain-new',
-                      params: {
-                        itemId,
-                        itemType,
-                        applicationId,
-                        defaultPort: defaultPort ? String(defaultPort) : '',
-                        mode: 'edit',
-                        domainId: domain.domainId,
-                        host: domain.host,
-                        path: domain.path ?? '/',
-                        internalPath: domain.internalPath ?? '/',
-                        stripPath: String(domain.stripPath),
-                        https: String(domain.https),
-                        port: domain.port ? String(domain.port) : '',
-                        certificateType: domain.certificateType,
-                        domainType: domain.domainType ?? '',
-                      },
-                    })
-                  }>
+                  onPress={() => {
+                    void openEditDomain(domain);
+                  }}>
                   <Icon as={PencilIcon} className="text-secondary-foreground size-3.5" />
                   {/* <Text className="text-xs">Edit</Text> */}
                 </Button>

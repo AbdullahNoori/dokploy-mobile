@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { formatRelativeTime, getServiceCount } from '@/lib/utils';
 import type { ProjectAllResponseBody } from '@/types/projects';
 import { Link } from 'expo-router';
@@ -15,10 +16,15 @@ type Props = {
 export const ProjectsCard = memo(function ProjectsCard({ project }: Props) {
   const serviceCount = getServiceCount(project.environments);
   const serviceLabel = serviceCount === 1 ? '1 service' : `${serviceCount} services`;
+  const { impact } = useHaptics();
 
   return (
     <Link href={`/${project.projectId}`} asChild>
-      <Pressable className="bg-card border-border/80 rounded-2xl border px-4 py-3">
+      <Pressable
+        onPressIn={() => {
+          void impact();
+        }}
+        className="bg-card border-border/80 rounded-2xl border px-4 py-3">
         <View className="flex-row items-start justify-between">
           <View className="flex-row items-center gap-2">
             <Icon as={LayoutGridIcon} className="text-muted-foreground size-4" />
@@ -30,9 +36,7 @@ export const ProjectsCard = memo(function ProjectsCard({ project }: Props) {
         </View>
         <View className="flex-row items-center justify-between">
           <Text variant="muted">{formatRelativeTime(project.createdAt)}</Text>
-          <Text className="text-muted-foreground text-sm font-medium">
-            {serviceLabel}
-          </Text>
+          <Text className="text-muted-foreground text-sm font-medium">{serviceLabel}</Text>
         </View>
       </Pressable>
     </Link>

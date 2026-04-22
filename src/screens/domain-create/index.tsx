@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { HttpError } from '@/lib/http-error';
 import { isErrorResponse } from '@/lib/utils';
 
@@ -67,6 +68,7 @@ export default function DomainCreateScreen() {
   const [https, setHttps] = useState(httpsParam === 'true');
   const [port, setPort] = useState(portParam ?? defaultPort ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { impact, notifyError, notifySuccess, selection } = useHaptics();
 
   const parsedPort = useMemo(() => {
     if (!port.trim()) return undefined;
@@ -78,8 +80,11 @@ export default function DomainCreateScreen() {
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return;
 
+    await impact();
+
     const trimmedHost = host.trim();
     if (!trimmedHost || !trimmedHost.includes('.')) {
+      await notifyError();
       toast.error('Enter a valid host.');
       return;
     }
@@ -88,11 +93,13 @@ export default function DomainCreateScreen() {
     const normalizedInternalPath = internalPath.trim();
 
     if (normalizedPath && !normalizedPath.startsWith('/')) {
+      await notifyError();
       toast.error('Path must start with /.');
       return;
     }
 
     if (normalizedInternalPath && !normalizedInternalPath.startsWith('/')) {
+      await notifyError();
       toast.error('Internal path must start with /.');
       return;
     }
@@ -101,11 +108,13 @@ export default function DomainCreateScreen() {
       parsedPort !== undefined &&
       (Number.isNaN(parsedPort) || parsedPort < 1 || parsedPort > 65535)
     ) {
+      await notifyError();
       toast.error('Port must be between 1 and 65535.');
       return;
     }
 
     if (isEdit && !domainId) {
+      await notifyError();
       toast.error('Missing domain id.');
       return;
     }
@@ -129,10 +138,12 @@ export default function DomainCreateScreen() {
         });
 
         if (isErrorResponse(result)) {
+          await notifyError();
           toast.error(result.message ?? result.error ?? 'Unable to update domain.');
           return;
         }
 
+        await notifySuccess();
         toast.success('Domain updated.');
       } else {
         const result = await domainCreate({
@@ -148,10 +159,12 @@ export default function DomainCreateScreen() {
         });
 
         if (isErrorResponse(result)) {
+          await notifyError();
           toast.error(result.message ?? result.error ?? 'Unable to create domain.');
           return;
         }
 
+        await notifySuccess();
         toast.success('Domain created.');
       }
 
@@ -160,6 +173,7 @@ export default function DomainCreateScreen() {
       }
       router.back();
     } catch (error) {
+      await notifyError();
       toast.error(
         resolveErrorMessage(error, isEdit ? 'Unable to update domain.' : 'Unable to create domain.')
       );
@@ -172,6 +186,7 @@ export default function DomainCreateScreen() {
     domainId,
     domainTypeParam,
     host,
+    impact,
     path,
     internalPath,
     stripPath,
@@ -181,14 +196,33 @@ export default function DomainCreateScreen() {
     isSubmitting,
     isEdit,
     mutate,
+    notifyError,
+    notifySuccess,
     router,
   ]);
+
+  const handleStripPathChange = useCallback(
+    (nextValue: boolean) => {
+      void selection();
+      setStripPath(nextValue);
+    },
+    [selection]
+  );
+
+  const handleHttpsChange = useCallback(
+    (nextValue: boolean) => {
+      void selection();
+      setHttps(nextValue);
+    },
+    [selection]
+  );
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={['left', 'right']}>
       <Stack.Screen options={{ title: isEdit ? 'Edit Domain' : 'Add Domain' }} />
       <ScrollView
         contentContainerClassName="gap-4 px-4 py-4"
+        contentInsetAdjustmentBehavior="automatic"
         automaticallyAdjustKeyboardInsets={true}
         keyboardDismissMode="interactive">
         <View className="gap-2">
@@ -239,7 +273,7 @@ export default function DomainCreateScreen() {
               Remove the external path before forwarding to the app.
             </Text>
           </View>
-          <Switch checked={stripPath} onCheckedChange={setStripPath} />
+          <Switch checked={stripPath} onCheckedChange={handleStripPathChange} />
         </View>
 
         <View className="gap-2">
@@ -262,7 +296,7 @@ export default function DomainCreateScreen() {
               Automatically provision SSL via Let’s Encrypt.
             </Text>
           </View>
-          <Switch checked={https} onCheckedChange={setHttps} />
+          <Switch checked={https} onCheckedChange={handleHttpsChange} />
         </View>
 
         <Button onPress={handleSubmit} disabled={isSubmitting} className="mt-2">

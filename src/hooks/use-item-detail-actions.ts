@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner-native';
 
 import { applicationRedeploy, applicationReload, applicationStop } from '@/api/application';
+import { useHaptics } from '@/hooks/use-haptics';
 import { HttpError } from '@/lib/http-error';
 import { isErrorResponse } from '@/lib/utils';
 
@@ -45,23 +46,25 @@ export function useItemDetailActions({
   onRefresh,
 }: Params): ItemDetailActionsState {
   const [activeAction, setActiveAction] = useState<ActionKey | null>(null);
+  const { impact, notifyError, notifySuccess } = useHaptics();
 
   const canDeploy = isApplication && Boolean(applicationId) && !isDeploymentRunning;
   const canStop = isApplication && Boolean(applicationId);
-  const canReload =
-    isApplication && Boolean(applicationId && appName) && !isDeploymentRunning;
+  const canReload = isApplication && Boolean(applicationId && appName) && !isDeploymentRunning;
   const isBusy = activeAction !== null;
 
   const handleResult = useCallback(
-    (result: unknown, successMessage: string, errorMessage: string) => {
+    async (result: unknown, successMessage: string, errorMessage: string) => {
       if (isErrorResponse(result)) {
+        await notifyError();
         toast.error(result.message ?? result.error ?? errorMessage);
         return;
       }
+      await notifySuccess();
       toast.success(successMessage);
       onRefresh?.();
     },
-    [onRefresh]
+    [notifyError, notifySuccess, onRefresh]
   );
 
   const runAction = useCallback(
@@ -72,17 +75,19 @@ export function useItemDetailActions({
       errorMessage: string
     ) => {
       if (activeAction) return;
+      await impact();
       setActiveAction(action);
       try {
         const result = await runner();
-        handleResult(result, successMessage, errorMessage);
+        await handleResult(result, successMessage, errorMessage);
       } catch (error) {
+        await notifyError();
         toast.error(resolveErrorMessage(error, errorMessage));
       } finally {
         setActiveAction(null);
       }
     },
-    [activeAction, handleResult]
+    [activeAction, handleResult, impact, notifyError]
   );
 
   const onDeploy = useCallback(async () => {

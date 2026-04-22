@@ -55,8 +55,8 @@ type UseRequestsScreenResult = {
     error: string | null;
     isRefreshing: boolean;
     isLoadingMore: boolean;
-    refresh: () => Promise<void>;
-    retry: () => Promise<void>;
+    refresh: () => Promise<boolean>;
+    retry: () => Promise<boolean>;
     loadMore: () => Promise<void>;
   };
 };
@@ -106,7 +106,7 @@ export function useRequestsScreen(): UseRequestsScreenResult {
         });
 
         if (requestId !== activeRequestIdRef.current) {
-          return;
+          return false;
         }
 
         setItems((prev) => (options.append ? [...prev, ...response.items] : response.items));
@@ -114,9 +114,10 @@ export function useRequestsScreen(): UseRequestsScreenResult {
         setPageIndex(nextPageIndex);
         setError(null);
         hasLoadedOnceRef.current = true;
+        return true;
       } catch (loadError) {
         if (requestId !== activeRequestIdRef.current) {
-          return;
+          return false;
         }
 
         const message = resolveErrorMessage(loadError, 'Unable to load requests.');
@@ -128,9 +129,10 @@ export function useRequestsScreen(): UseRequestsScreenResult {
         } else {
           toast.error(message);
         }
+        return false;
       } finally {
         if (requestId !== activeRequestIdRef.current) {
-          return;
+          return false;
         }
 
         if (isFirstLoad) {
@@ -183,7 +185,7 @@ export function useRequestsScreen(): UseRequestsScreenResult {
   }, []);
 
   const refresh = useCallback(async () => {
-    await loadPage(0, { append: false, refresh: true });
+    return loadPage(0, { append: false, refresh: true });
   }, [loadPage]);
 
   const loadMore = useCallback(async () => {
@@ -203,7 +205,7 @@ export function useRequestsScreen(): UseRequestsScreenResult {
   ]);
 
   const retry = useCallback(async () => {
-    await loadPage(0, { append: false });
+    return loadPage(0, { append: false });
   }, [loadPage]);
 
   const hasActiveFilters = useMemo(() => {

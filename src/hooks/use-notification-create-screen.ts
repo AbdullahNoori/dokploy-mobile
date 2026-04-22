@@ -4,6 +4,7 @@ import { useSWRConfig } from 'swr';
 import { toast } from 'sonner-native';
 
 import { notificationCreateCustom } from '@/api/notifications';
+import { useHaptics } from '@/hooks/use-haptics';
 import { getStoredPushTokenRecord } from '@/lib/push-notification-storage';
 import { HttpError } from '@/lib/http-error';
 import { isErrorResponse } from '@/lib/utils';
@@ -34,6 +35,7 @@ export function useNotificationCreateScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const { impact, notifyError, notifySuccess } = useHaptics();
 
   const pushTokenRecord = getStoredPushTokenRecord();
   const pushToken = pushTokenRecord?.token?.trim() ?? '';
@@ -60,12 +62,15 @@ export function useNotificationCreateScreen() {
       return;
     }
 
+    await impact();
+
     const trimmedName = name.trim();
 
     if (!trimmedName) {
       const message = 'Enter a notification name.';
       setNameError(message);
       setErrorMessage(message);
+      await notifyError();
       toast.error(message);
       return;
     }
@@ -75,6 +80,7 @@ export function useNotificationCreateScreen() {
     if (!pushToken) {
       const message = 'Push notifications are not ready yet. Enable notifications and try again.';
       setErrorMessage(message);
+      await notifyError();
       toast.error(message);
       return;
     }
@@ -103,21 +109,24 @@ export function useNotificationCreateScreen() {
       if (isErrorResponse(result)) {
         const message = result.message ?? result.error ?? 'Unable to create notification.';
         setErrorMessage(message);
+        await notifyError();
         toast.error(message);
         return;
       }
 
+      await notifySuccess();
       toast.success('Notification created.');
       await mutate('notification/all');
       router.back();
     } catch (error) {
       const message = resolveErrorMessage(error, 'Unable to create notification.');
       setErrorMessage(message);
+      await notifyError();
       toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, mutate, name, pushToken, router, toggles]);
+  }, [impact, isSubmitting, mutate, name, notifyError, notifySuccess, pushToken, router, toggles]);
 
   return {
     canSubmit,

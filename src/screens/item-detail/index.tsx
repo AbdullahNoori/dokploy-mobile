@@ -7,6 +7,7 @@ import { useUniwind } from 'uniwind';
 import { useDockerContainersByAppNameMatch } from '@/api/docker';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { useItemDetailScreen } from '@/hooks/use-item-detail-screen';
 import type { ProjectItemType } from '@/types/projects';
 import type { ApplicationOneResponseBody } from '@/types/application';
@@ -35,6 +36,7 @@ export default function ItemDetailScreen() {
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const headerHeight = useHeaderHeight();
+  const { impact, notifyError, notifySuccess } = useHaptics();
 
   const normalizedType = useMemo(() => {
     if (!itemType) return undefined;
@@ -81,10 +83,41 @@ export default function ItemDetailScreen() {
       if (activeTab === 'logs' && logsLookupName) {
         await dockerContainers.mutate();
       }
+      await notifySuccess();
+    } catch {
+      await notifyError();
     } finally {
       setIsRefreshing(false);
     }
-  }, [activeTab, dockerContainers, isRefreshing, logsLookupName, retry]);
+  }, [
+    activeTab,
+    dockerContainers,
+    isRefreshing,
+    logsLookupName,
+    notifyError,
+    notifySuccess,
+    retry,
+  ]);
+
+  const handleRetry = useCallback(async () => {
+    await impact();
+    try {
+      await retry();
+      await notifySuccess();
+    } catch {
+      await notifyError();
+    }
+  }, [impact, notifyError, notifySuccess, retry]);
+
+  const handleRetryLookup = useCallback(async () => {
+    await impact();
+    try {
+      await dockerContainers.mutate();
+      await notifySuccess();
+    } catch {
+      await notifyError();
+    }
+  }, [dockerContainers, impact, notifyError, notifySuccess]);
   const isDeploymentRunning = isApplication
     ? deployments.some((deployment) => (deployment.status ?? '').toLowerCase() === 'running')
     : false;
@@ -107,7 +140,13 @@ export default function ItemDetailScreen() {
   }
 
   if (isError) {
-    return <ItemDetailErrorState onRetry={retry} />;
+    return (
+      <ItemDetailErrorState
+        onRetry={() => {
+          void handleRetry();
+        }}
+      />
+    );
   }
 
   return (
@@ -151,7 +190,7 @@ export default function ItemDetailScreen() {
               isLookupLoading={Boolean(dockerContainers.isLoading)}
               lookupError={dockerContainerError}
               onRetryLookup={() => {
-                void dockerContainers.mutate();
+                void handleRetryLookup();
               }}
             />
           ) : null}

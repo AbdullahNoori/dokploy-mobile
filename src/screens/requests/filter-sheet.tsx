@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import {
   parseRequestsFilterRouteParams,
   setPendingRequestsFilters,
@@ -178,6 +179,7 @@ export default function RequestsFilterSheetScreen() {
   const [draftStatuses, setDraftStatuses] = useState<SettingsRequestStatusFamily[]>(
     routeValues.statuses
   );
+  const { impact, notifySuccess, selection } = useHaptics();
   const isDefaultState =
     draftDatePreset === DEFAULT_REQUESTS_DATE_PRESET && draftStatuses.length === 0;
 
@@ -187,21 +189,25 @@ export default function RequestsFilterSheetScreen() {
   }, [routeValues.datePreset, routeValues.statuses]);
 
   const toggleStatus = (status: SettingsRequestStatusFamily) => {
+    void selection();
     setDraftStatuses((prev) =>
       prev.includes(status) ? prev.filter((current) => current !== status) : [...prev, status]
     );
   };
 
   const handleReset = () => {
+    void selection();
     setDraftDatePreset(DEFAULT_REQUESTS_DATE_PRESET);
     setDraftStatuses([]);
   };
 
-  const handleApply = () => {
+  const handleApply = async () => {
+    await impact();
     setPendingRequestsFilters({
       datePreset: draftDatePreset,
       statuses: draftStatuses,
     });
+    await notifySuccess();
     router.back();
   };
 
@@ -235,7 +241,10 @@ export default function RequestsFilterSheetScreen() {
                     key={preset.value}
                     label={preset.label}
                     active={draftDatePreset === preset.value}
-                    onPress={() => setDraftDatePreset(preset.value)}
+                    onPress={() => {
+                      void selection();
+                      setDraftDatePreset(preset.value);
+                    }}
                   />
                 ))}
               </View>
@@ -276,7 +285,11 @@ export default function RequestsFilterSheetScreen() {
               disabled={isDefaultState}>
               <Text>{isDefaultState ? 'All clear' : 'Reset'}</Text>
             </Button>
-            <Button className="h-12 flex-[1.25] rounded-xl" onPress={handleApply}>
+            <Button
+              className="h-12 flex-[1.25] rounded-xl"
+              onPress={() => {
+                void handleApply();
+              }}>
               <Text>Apply filters</Text>
             </Button>
           </View>

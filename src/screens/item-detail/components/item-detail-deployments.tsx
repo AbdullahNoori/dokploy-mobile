@@ -4,6 +4,7 @@ import { ChevronRightIcon } from 'lucide-react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { formatDuration, formatRelativeTime, formatStatusLabel } from '@/lib/utils';
 import type { DeploymentRow } from '@/hooks/use-item-detail-screen';
 
@@ -22,6 +23,7 @@ const STATUS_CLASS: Record<string, string> = {
 
 export function ItemDetailDeployments({ deployments, itemId }: Props) {
   const router = useRouter();
+  const { impact } = useHaptics();
 
   return (
     <View className="mt-4 gap-3">
@@ -37,7 +39,8 @@ export function ItemDetailDeployments({ deployments, itemId }: Props) {
           <Pressable
             key={deployment.id}
             className="bg-card border-border/80 rounded-2xl border px-4 py-3 active:opacity-90"
-            onPress={() =>
+            onPress={async () => {
+              await impact();
               router.push({
                 pathname: '/(app)/modals/deployment-detail',
                 params: {
@@ -63,8 +66,8 @@ export function ItemDetailDeployments({ deployments, itemId }: Props) {
                   volumeBackupId: deployment.volumeBackupId ?? '',
                   buildServerId: deployment.buildServerId ?? '',
                 },
-              })
-            }>
+              });
+            }}>
             <View className="flex-row items-center justify-between gap-3">
               <View className="flex-1 flex-row items-center gap-2">
                 <Text className="text-foreground font-semibold" numberOfLines={1}>

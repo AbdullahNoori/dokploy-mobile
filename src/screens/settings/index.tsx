@@ -4,6 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { THEME } from '@/lib/theme';
 import { useAuthStore } from '@/store/auth-store';
 import { Link, Stack } from 'expo-router';
@@ -48,9 +49,15 @@ function SettingsSectionLabel({ label }: { label: string }) {
 }
 
 function SettingsLinkRow({ href, icon, label }: SettingsLinkRowProps) {
+  const { impact } = useHaptics();
+
   return (
     <Link href={href} asChild>
-      <Pressable className="bg-card border-border/80 flex-row items-center justify-between rounded-lg border px-4 py-3">
+      <Pressable
+        onPressIn={() => {
+          void impact();
+        }}
+        className="bg-card border-border/80 flex-row items-center justify-between rounded-lg border px-4 py-3">
         <View className="flex-row items-center gap-3">
           <Icon as={icon} className="size-5" />
           <Text className="font-semibold">{label}</Text>
@@ -69,8 +76,10 @@ export default function SettingsScreen() {
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const isDarkMode = resolvedTheme === 'dark';
   const themeMeta = THEME_META[resolvedTheme];
+  const { notifyError, notifySuccess, notifyWarning, selection } = useHaptics();
 
   function handleThemeChange(nextChecked: boolean) {
+    void selection();
     Uniwind.setTheme(nextChecked ? 'dark' : 'light');
   }
 
@@ -83,17 +92,20 @@ export default function SettingsScreen() {
 
     try {
       await logout();
+      await notifySuccess();
     } catch {
+      await notifyError();
       toast.error('Unable to log out right now.');
       setIsLoggingOut(false);
     }
-  }, [isLoggingOut, logout]);
+  }, [isLoggingOut, logout, notifyError, notifySuccess]);
 
   const confirmLogout = useCallback(() => {
     if (isLoggingOut) {
       return;
     }
 
+    void notifyWarning();
     Alert.alert('Logout', 'Remove your saved connection and sign out of Dokploy on this device?', [
       { text: 'Cancel', style: 'cancel' },
       {

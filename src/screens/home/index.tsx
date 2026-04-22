@@ -7,6 +7,7 @@ import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
 import { useUniwind } from 'uniwind';
 import { useAuthStore } from '@/store/auth-store';
+import { useHaptics } from '@/hooks/use-haptics';
 
 const LOGO = {
   light: require('../../../assets/images/react-native-reusables-light.png'),
@@ -28,10 +29,13 @@ export default function HomeScreen() {
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const logout = useAuthStore((state) => state.logout);
+  const { impact, notifySuccess } = useHaptics();
 
   const handleLogout = React.useCallback(async () => {
+    await impact();
     await logout();
-  }, [logout]);
+    await notifySuccess();
+  }, [impact, logout, notifySuccess]);
 
   return (
     <>

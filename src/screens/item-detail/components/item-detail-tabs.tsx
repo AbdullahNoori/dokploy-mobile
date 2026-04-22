@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { cn } from '@/lib/utils';
 
 type TabKey = 'general' | 'logs' | 'deployments' | 'environment' | 'domain';
@@ -19,6 +20,8 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 ];
 
 export function ItemDetailTabs({ value, onChange }: Props) {
+  const { selection } = useHaptics();
+
   return (
     <View className="bg-card border-border/80 mt-5 overflow-hidden rounded-xl border">
       <ScrollView
@@ -35,7 +38,12 @@ export function ItemDetailTabs({ value, onChange }: Props) {
           return (
             <Pressable
               key={tab.key}
-              onPress={() => onChange(tab.key)}
+              onPress={() => {
+                if (value !== tab.key) {
+                  void selection();
+                }
+                onChange(tab.key);
+              }}
               className={cn(
                 'mr-2 min-w-27.5 flex-none items-center rounded-lg px-3 py-2',
                 isActive ? 'bg-background' : 'opacity-60'

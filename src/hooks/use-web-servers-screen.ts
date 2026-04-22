@@ -10,6 +10,7 @@ import {
   saveWebServerSettings,
   updateWebServerBackup,
 } from '@/api/web-servers';
+import { useHaptics } from '@/hooks/use-haptics';
 import { HttpError } from '@/lib/http-error';
 import type {
   WebServerBackup,
@@ -99,6 +100,7 @@ function getPrimaryBackup(backups: WebServerBackup[]) {
 }
 
 export function useWebServersScreen() {
+  const { impact, notifyError, notifySuccess } = useHaptics();
   const settingsRequestIdRef = useRef(0);
   const backupsRequestIdRef = useRef(0);
 
@@ -131,21 +133,23 @@ export function useWebServersScreen() {
     try {
       const response = await readWebServerSettings();
       if (requestId !== settingsRequestIdRef.current) {
-        return;
+        return false;
       }
 
       setInitialSettings(response);
       setDraftSettings(response);
       setSettingsStatus('ready');
       setSettingsError(null);
+      return true;
     } catch (error) {
       if (requestId !== settingsRequestIdRef.current) {
-        return;
+        return false;
       }
 
       const resolved = resolveErrorState(error, 'Unable to load web server settings.');
       setSettingsError(resolved);
       setSettingsStatus(resolved.kind === 'unauthorized' ? 'unauthorized' : 'error');
+      return false;
     }
   }, []);
 
@@ -161,21 +165,23 @@ export function useWebServersScreen() {
     try {
       const response = await readWebServerBackups();
       if (requestId !== backupsRequestIdRef.current) {
-        return;
+        return false;
       }
 
       setBackups(response);
       setBackupsStatus('ready');
       setBackupsError(null);
+      return true;
     } catch (error) {
       if (requestId !== backupsRequestIdRef.current) {
-        return;
+        return false;
       }
 
       const resolved = resolveErrorState(error, 'Unable to load backups.');
       setBackups([]);
       setBackupsError(resolved);
       setBackupsStatus(resolved.kind === 'unauthorized' ? 'unauthorized' : 'error');
+      return false;
     }
   }, []);
 
@@ -245,8 +251,11 @@ export function useWebServersScreen() {
   );
 
   const saveSettings = useCallback(async () => {
+    await impact();
+
     if (!canSaveSettings) {
       if (settingsValidationMessage) {
+        await notifyError();
         toast.error(settingsValidationMessage);
       }
       return;
@@ -271,13 +280,22 @@ export function useWebServersScreen() {
 
       setInitialSettings(normalized);
       setDraftSettings(normalized);
+      await notifySuccess();
       toast.success('Web server settings saved.');
     } catch (error) {
+      await notifyError();
       toast.error(resolveErrorState(error, 'Unable to save web server settings.').message);
     } finally {
       setIsSavingSettings(false);
     }
-  }, [canSaveSettings, draftSettings, settingsValidationMessage]);
+  }, [
+    canSaveSettings,
+    draftSettings,
+    impact,
+    notifyError,
+    notifySuccess,
+    settingsValidationMessage,
+  ]);
 
   const runBackup = useCallback(
     async (backupId: string) => {
@@ -285,30 +303,34 @@ export function useWebServersScreen() {
         return;
       }
 
+      await impact();
       setRunningBackupId(backupId);
 
       try {
         await runWebServerBackup({ backupId });
+        await notifySuccess();
         toast.success('Backup run started.');
       } catch (error) {
+        await notifyError();
         toast.error(resolveErrorState(error, 'Unable to run backup.').message);
       } finally {
         setRunningBackupId(null);
       }
     },
-    [deletingBackupId, runningBackupId, updatingBackupId]
+    [deletingBackupId, impact, notifyError, notifySuccess, runningBackupId, updatingBackupId]
   );
 
   const primaryBackupId = useMemo(() => getPrimaryBackup(backups)?.backupId ?? null, [backups]);
 
   const runPrimaryBackup = useCallback(async () => {
     if (!primaryBackupId) {
+      await notifyError();
       toast.error('No web server backup is available yet.');
       return;
     }
 
     await runBackup(primaryBackupId);
-  }, [primaryBackupId, runBackup]);
+  }, [notifyError, primaryBackupId, runBackup]);
 
   const saveBackup = useCallback(
     async (payload: WebServerBackupUpdateRequest) => {
@@ -316,21 +338,32 @@ export function useWebServersScreen() {
         return false;
       }
 
+      await impact();
       setUpdatingBackupId(payload.backupId);
 
       try {
         await updateWebServerBackup(payload);
+        await notifySuccess();
         toast.success('Backup updated.');
         await loadBackups();
         return true;
       } catch (error) {
+        await notifyError();
         toast.error(resolveErrorState(error, 'Unable to update backup.').message);
         return false;
       } finally {
         setUpdatingBackupId(null);
       }
     },
-    [deletingBackupId, loadBackups, runningBackupId, updatingBackupId]
+    [
+      deletingBackupId,
+      impact,
+      loadBackups,
+      notifyError,
+      notifySuccess,
+      runningBackupId,
+      updatingBackupId,
+    ]
   );
 
   const removeBackup = useCallback(
@@ -339,21 +372,24 @@ export function useWebServersScreen() {
         return false;
       }
 
+      await impact();
       setDeletingBackupId(backupId);
 
       try {
         await deleteWebServerBackup({ backupId });
         setBackups((current) => current.filter((backup) => backup.backupId !== backupId));
+        await notifySuccess();
         toast.success('Backup deleted.');
         return true;
       } catch (error) {
+        await notifyError();
         toast.error(resolveErrorState(error, 'Unable to delete backup.').message);
         return false;
       } finally {
         setDeletingBackupId(null);
       }
     },
-    [deletingBackupId, runningBackupId, updatingBackupId]
+    [deletingBackupId, impact, notifyError, notifySuccess, runningBackupId, updatingBackupId]
   );
 
   const isInitialLoading = useMemo(

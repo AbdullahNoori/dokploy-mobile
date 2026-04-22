@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react-native';
 
@@ -12,9 +13,14 @@ type Props = {
 };
 
 export function NotificationsToggleRow({ title, description, value, onToggle }: Props) {
+  const { selection } = useHaptics();
+
   return (
     <Pressable
-      onPress={() => onToggle(!value)}
+      onPress={() => {
+        void selection();
+        onToggle(!value);
+      }}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: value }}
       className={cn(

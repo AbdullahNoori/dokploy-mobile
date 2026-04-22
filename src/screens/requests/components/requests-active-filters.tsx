@@ -3,6 +3,7 @@ import { XIcon } from 'lucide-react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import {
   DEFAULT_REQUESTS_DATE_PRESET,
   REQUESTS_STATUS_OPTIONS,
@@ -48,10 +49,18 @@ export function RequestsActiveFilters({
   onRemoveDatePreset,
   onRemoveStatus,
 }: Props) {
+  const { selection } = useHaptics();
+
   return (
     <View className="flex-row flex-wrap gap-2">
       {datePreset !== DEFAULT_REQUESTS_DATE_PRESET ? (
-        <FilterChip label={datePreset} onPress={onRemoveDatePreset} />
+        <FilterChip
+          label={datePreset}
+          onPress={() => {
+            void selection();
+            onRemoveDatePreset();
+          }}
+        />
       ) : null}
       {statuses.map((status) => {
         const option = REQUESTS_STATUS_OPTIONS.find((item) => item.value === status);
@@ -60,7 +69,10 @@ export function RequestsActiveFilters({
           <FilterChip
             key={status}
             label={option?.label ?? status}
-            onPress={() => onRemoveStatus(status)}
+            onPress={() => {
+              void selection();
+              onRemoveStatus(status);
+            }}
             className={option?.activeChipClassName}
             textClassName={option?.activeChipTextClassName}
           />

@@ -6,6 +6,7 @@ import { useNotificationAll } from '@/api/notifications';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
+import { useHaptics } from '@/hooks/use-haptics';
 import type { NotificationAllResponseBody } from '@/types/notifications';
 import { THEME } from '@/lib/theme';
 import { cn, isErrorResponse } from '@/lib/utils';
@@ -25,10 +26,12 @@ export default function NotificationsScreen() {
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const { data, error, isLoading, mutate } = useNotificationAll();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { impact, notifyError, notifySuccess } = useHaptics();
 
-  const openCreateSheet = useCallback(() => {
+  const openCreateSheet = useCallback(async () => {
+    await impact();
     router.push('/(app)/modals/notification-new');
-  }, [router]);
+  }, [impact, router]);
 
   const notifications = useMemo<Array<NotificationAllResponseBody>>(() => {
     if (!data || isErrorResponse(data) || !Array.isArray(data)) {
@@ -47,9 +50,15 @@ export default function NotificationsScreen() {
           : 'Unable to load notifications.')) ||
     'Unable to load notifications.';
 
-  const handleRetry = useCallback(() => {
-    void mutate();
-  }, [mutate]);
+  const handleRetry = useCallback(async () => {
+    await impact();
+    try {
+      await mutate();
+      await notifySuccess();
+    } catch {
+      await notifyError();
+    }
+  }, [impact, mutate, notifyError, notifySuccess]);
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
@@ -58,10 +67,13 @@ export default function NotificationsScreen() {
 
     try {
       await mutate();
+      await notifySuccess();
+    } catch {
+      await notifyError();
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, mutate]);
+  }, [isRefreshing, mutate, notifyError, notifySuccess]);
 
   const listHeader = useMemo(
     () => <NotificationsListHeader count={notifications.length} />,
@@ -94,7 +106,9 @@ export default function NotificationsScreen() {
               variant="ghost"
               size="icon"
               className={cn('h-10 w-10 rounded-full shadow-none')}
-              onPress={openCreateSheet}>
+              onPress={() => {
+                void openCreateSheet();
+              }}>
               <Icon as={Plus} className="size-6" />
             </Button>
           ),
@@ -109,7 +123,11 @@ export default function NotificationsScreen() {
             <View className="pt-4">
               <NotificationsListHeader count={0} />
             </View>
-            <NotificationsEmptyState onPressAdd={openCreateSheet} />
+            <NotificationsEmptyState
+              onPressAdd={() => {
+                void openCreateSheet();
+              }}
+            />
           </View>
         ) : (
           <FlatList

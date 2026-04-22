@@ -11,6 +11,7 @@ import { ArrowDownIcon, RotateCwIcon } from 'lucide-react-native';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useHaptics } from '@/hooks/use-haptics';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -57,6 +58,7 @@ export function DeploymentLogViewer({
   const isFollowingRef = useRef(true);
   const [isFollowing, setIsFollowing] = useState(true);
   const [hasUnseenUpdates, setHasUnseenUpdates] = useState(false);
+  const { impact } = useHaptics();
   const connectionLabel = getConnectionLabel(isConnecting, isConnected, error);
   const statusDetail = !hasLogPath
     ? 'Log file unavailable'
@@ -109,9 +111,15 @@ export function DeploymentLogViewer({
   );
 
   const handleJumpToLatest = useCallback(() => {
+    void impact();
     setFollowingState(true);
     scrollToLatest(true);
-  }, [scrollToLatest, setFollowingState]);
+  }, [impact, scrollToLatest, setFollowingState]);
+
+  const handleReconnect = useCallback(() => {
+    void impact();
+    onReconnect();
+  }, [impact, onReconnect]);
 
   useEffect(() => {
     if (lines.length === 0) {
@@ -154,7 +162,7 @@ export function DeploymentLogViewer({
         </View>
         {hasLogPath && error && lines.length > 0 ? (
           <View className="items-end px-2 pb-2">
-            <Button variant="ghost" size="sm" className="h-8 px-2" onPress={onReconnect}>
+            <Button variant="ghost" size="sm" className="h-8 px-2" onPress={handleReconnect}>
               <Icon as={RotateCwIcon} className="size-4" />
               <Text>Reconnect</Text>
             </Button>
@@ -191,7 +199,11 @@ export function DeploymentLogViewer({
               {error}
             </Text>
           </View>
-          <Button variant="secondary" size="sm" className="gap-2 self-start" onPress={onReconnect}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-2 self-start"
+            onPress={handleReconnect}>
             <Icon as={RotateCwIcon} className="text-secondary-foreground size-4" />
             <Text>Reconnect</Text>
           </Button>
