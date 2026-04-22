@@ -31,6 +31,13 @@ export default function ModalsLayout() {
         }}
       />
       <Stack.Screen
+        name="push-notifications-help"
+        options={{
+          headerTitle: 'Push Notifications',
+          headerBackTitle: 'Home',
+        }}
+      />
+      <Stack.Screen
         name="project-domain-new"
         options={{
           headerTitle: 'Add Domain',

@@ -26,7 +26,9 @@ type AuthStore = {
   rootAccessStatus: RootAccessStatus;
   hasRootAccess: boolean;
   isHandlingUnauthorized: boolean;
+  shouldShowPushOnboarding: boolean;
   bootstrap: () => Promise<void>;
+  consumePushOnboarding: () => void;
   refreshRootAccess: () => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   logout: () => Promise<void>;
@@ -38,12 +40,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   rootAccessStatus: 'unknown',
   hasRootAccess: false,
   isHandlingUnauthorized: false,
+  shouldShowPushOnboarding: false,
 
   bootstrap: async () => {
     try {
       await initHttpConfig();
       const hasCredentials = Boolean(getServerUrl() && getPat());
-      set({ status: hasCredentials ? 'signedIn' : 'signedOut' });
+      set({
+        status: hasCredentials ? 'signedIn' : 'signedOut',
+        shouldShowPushOnboarding: false,
+      });
 
       if (hasCredentials) {
         await get().refreshRootAccess();
@@ -51,8 +57,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ rootAccessStatus: 'unknown', hasRootAccess: false });
       }
     } catch {
-      set({ status: 'signedOut', rootAccessStatus: 'unknown', hasRootAccess: false });
+      set({
+        status: 'signedOut',
+        rootAccessStatus: 'unknown',
+        hasRootAccess: false,
+        shouldShowPushOnboarding: false,
+      });
     }
+  },
+
+  consumePushOnboarding: () => {
+    set({ shouldShowPushOnboarding: false });
   },
 
   refreshRootAccess: async () => {
@@ -84,14 +99,24 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     setServerUrl(serverUrl);
     await setPat(pat);
-    set({ status: 'signedIn', rootAccessStatus: 'unknown', hasRootAccess: false });
+    set({
+      status: 'signedIn',
+      rootAccessStatus: 'unknown',
+      hasRootAccess: false,
+      shouldShowPushOnboarding: true,
+    });
     await get().refreshRootAccess();
   },
 
   logout: async () => {
     await clearCredentials();
     clearStoredPushNotificationState();
-    set({ status: 'signedOut', rootAccessStatus: 'unknown', hasRootAccess: false });
+    set({
+      status: 'signedOut',
+      rootAccessStatus: 'unknown',
+      hasRootAccess: false,
+      shouldShowPushOnboarding: false,
+    });
   },
 
   handleUnauthorized: async () => {
@@ -104,7 +129,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       await clearCredentials();
       clearStoredPushNotificationState();
-      set({ status: 'signedOut', rootAccessStatus: 'unknown', hasRootAccess: false });
+      set({
+        status: 'signedOut',
+        rootAccessStatus: 'unknown',
+        hasRootAccess: false,
+        shouldShowPushOnboarding: false,
+      });
     } finally {
       set({ isHandlingUnauthorized: false });
     }

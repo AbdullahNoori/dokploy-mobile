@@ -8,6 +8,7 @@ const storage = createMMKV({
 
 const PUSH_TOKEN_RECORD_KEY = 'dokploy_push_token_record';
 const PUSH_PERMISSION_STATUS_KEY = 'dokploy_push_permission_status';
+const PUSH_ONBOARDING_SEEN_KEY = 'dokploy_push_onboarding_seen';
 
 function parsePushTokenRecord(value: string | undefined): PushTokenRecord | null {
   if (!value) {
@@ -47,7 +48,16 @@ export function setStoredPushPermissionStatus(status: PushPermissionStatus): voi
   storage.set(PUSH_PERMISSION_STATUS_KEY, status);
 }
 
+export function getStoredPushOnboardingSeen(): boolean {
+  return storage.getBoolean(PUSH_ONBOARDING_SEEN_KEY) ?? false;
+}
+
+export function setStoredPushOnboardingSeen(): void {
+  storage.set(PUSH_ONBOARDING_SEEN_KEY, true);
+}
+
 export function clearStoredPushNotificationState(): void {
   clearStoredPushTokenRecord();
   storage.remove(PUSH_PERMISSION_STATUS_KEY);
+  storage.remove(PUSH_ONBOARDING_SEEN_KEY);
 }

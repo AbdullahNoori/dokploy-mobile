@@ -1,5 +1,12 @@
-import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { useUniwind } from 'uniwind';
 
 import DokployLogoDark from '@/assets/logo/dokploy-dark.svg';
@@ -9,8 +16,6 @@ import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { useHaptics } from '@/hooks/use-haptics';
 import { THEME } from '@/lib/theme';
-
-import PatHelpSheet from './pat-help-sheet';
 
 type LoginFormProps = {
   serverUrl: string;
@@ -29,20 +34,18 @@ export default function LoginForm({
   onChangePat,
   onSubmit,
 }: LoginFormProps) {
-  const [isPatHelpOpen, setIsPatHelpOpen] = useState(false);
+  const router = useRouter();
   const { theme } = useUniwind();
   const { selection } = useHaptics();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const Logo = resolvedTheme === 'dark' ? DokployLogoDark : DokployLogo;
 
   const openPatHelp = () => {
+    Keyboard.dismiss();
     void selection();
-    setIsPatHelpOpen(true);
-  };
-
-  const handlePatHelpOpenChange = (open: boolean) => {
-    void selection();
-    setIsPatHelpOpen(open);
+    requestAnimationFrame(() => {
+      router.push('/modals/pat-help');
+    });
   };
 
   return (
@@ -119,7 +122,6 @@ export default function LoginForm({
           </View>
         </View>
       </ScrollView>
-      <PatHelpSheet open={isPatHelpOpen} onOpenChange={handlePatHelpOpenChange} />
     </KeyboardAvoidingView>
   );
 }
