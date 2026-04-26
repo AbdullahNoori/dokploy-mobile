@@ -83,9 +83,13 @@ const toDetailValue = (value: unknown) => {
   return String(value);
 };
 
+const toOptionalString = (value: unknown) =>
+  typeof value === 'string' && value ? value : undefined;
+
 export function useItemDetailScreen(
   itemType: ProjectItemType | undefined,
-  itemId: string | undefined
+  itemId: string | undefined,
+  initialStatus?: string
 ): ItemDetailState {
   const application = useApplicationOne(itemType === 'application' ? itemId : undefined);
   const redis = useRedisOne(itemType === 'redis' ? itemId : undefined);
@@ -134,11 +138,15 @@ export function useItemDetailScreen(
     return {
       title: detailData.name,
       subtitle: environment?.project?.name ?? environment?.name ?? undefined,
-      status: (detailData as any).applicationStatus ?? null,
+      status:
+        (detailData as any).applicationStatus ??
+        (detailData as any).composeStatus ??
+        initialStatus ??
+        null,
       createdAt: (detailData as any).createdAt,
       serverName: (detailData as any).server?.name ?? null,
     };
-  }, [detailData]);
+  }, [detailData, initialStatus]);
 
   const details = useMemo<DetailRow[]>(() => {
     if (!detailData || !itemType) return [];
@@ -157,13 +165,32 @@ export function useItemDetailScreen(
       ];
     }
 
+    if (itemType === 'compose') {
+      const compose = detailData as ComposeOneResponseBody;
+      const projectName = compose.environment?.project?.name;
+      const environmentName = compose.environment?.name;
+      const baseRows = [
+        { label: 'Compose ID', value: toDetailValue(compose.composeId) },
+        { label: 'Project', value: toDetailValue(projectName) },
+        { label: 'Environment', value: toDetailValue(environmentName) },
+        { label: 'Server', value: toDetailValue(compose.server?.name) },
+      ];
+      const optionalRows = [
+        { label: 'Source Type', value: toDetailValue(compose.sourceType) },
+        { label: 'Repository', value: toDetailValue(compose.repository) },
+        { label: 'Branch', value: toDetailValue(compose.branch) },
+      ].filter((row) => row.value !== '—');
+
+      return [...baseRows, ...optionalRows];
+    }
+
     return [
+      { label: 'App Name', value: toDetailValue((detailData as any).appName) },
       { label: 'Docker Image', value: toDetailValue((detailData as any).dockerImage) },
       { label: 'External Port', value: toDetailValue((detailData as any).externalPort) },
       { label: 'Replicas', value: toDetailValue((detailData as any).replicas) },
       { label: 'Memory Limit', value: toDetailValue((detailData as any).memoryLimit) },
       { label: 'CPU Limit', value: toDetailValue((detailData as any).cpuLimit) },
-      { label: 'Environment', value: toDetailValue((detailData as any).env) },
     ];
   }, [detailData, itemType]);
 
@@ -218,17 +245,18 @@ export function useItemDetailScreen(
     }
 
     if (itemType === 'compose') {
+      const appName = toOptionalString((detailData as ComposeOneResponseBody).appName);
       return {
-        name: detailData.name ?? null,
+        name: appName ?? detailData.name ?? null,
         appType: 'docker-compose' as const,
-        serverId: undefined,
+        serverId: toOptionalString((detailData as ComposeOneResponseBody).serverId),
       };
     }
 
     return {
-      name: ((detailData as any).appName as string | undefined) ?? null,
+      name: toOptionalString((detailData as any).appName) ?? detailData.name ?? null,
       appType: undefined,
-      serverId: undefined,
+      serverId: toOptionalString((detailData as any).serverId),
     };
   }, [detailData, itemType]);
 

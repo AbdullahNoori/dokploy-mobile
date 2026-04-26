@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useUniwind } from 'uniwind';
 
+import { useDomainsByApplicationId, useDomainsByComposeId } from '@/api/domain';
 import { useDockerContainersByAppNameMatch } from '@/api/docker';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Text } from '@/components/ui/text';
@@ -11,6 +12,7 @@ import { useHaptics } from '@/hooks/use-haptics';
 import { useItemDetailScreen } from '@/hooks/use-item-detail-screen';
 import type { ProjectItemType } from '@/types/projects';
 import type { ApplicationOneResponseBody } from '@/types/application';
+import type { ComposeOneResponseBody } from '@/types/compose';
 import { isErrorResponse } from '@/lib/utils';
 import { THEME } from '@/lib/theme';
 
@@ -26,9 +28,10 @@ import { ItemDetailSkeleton } from './components/item-detail-skeleton';
 import { ItemDetailTabs, type TabKey } from './components/item-detail-tabs';
 
 export default function ItemDetailScreen() {
-  const { itemId, itemName, itemType } = useLocalSearchParams<{
+  const { itemId, itemName, itemStatus, itemType } = useLocalSearchParams<{
     itemId: string;
     itemName?: string;
+    itemStatus?: string;
     itemType?: ProjectItemType;
   }>();
 
@@ -56,7 +59,7 @@ export default function ItemDetailScreen() {
     isLoading,
     isError,
     retry,
-  } = useItemDetailScreen(normalizedType, itemId);
+  } = useItemDetailScreen(normalizedType, itemId, itemStatus || undefined);
 
   const dockerContainers = useDockerContainersByAppNameMatch({
     appName: logsLookupName ?? '',
@@ -66,7 +69,35 @@ export default function ItemDetailScreen() {
   });
 
   const application = isApplication ? (data as ApplicationOneResponseBody | null) : null;
-  const domains = application?.domains ?? [];
+  const compose = normalizedType === 'compose' ? (data as ComposeOneResponseBody | null) : null;
+  const dataRecord = data as {
+    applicationId?: string | null;
+    composeId?: string | null;
+    domains?: ApplicationOneResponseBody['domains'];
+  } | null;
+  const actionAppName = isApplication
+    ? application?.appName
+    : ((data as any)?.appName as string | undefined);
+  const domainApplicationId =
+    application?.applicationId ??
+    (dataRecord?.applicationId ? dataRecord.applicationId : undefined);
+  const domainComposeId =
+    compose?.composeId ?? (dataRecord?.composeId ? dataRecord.composeId : undefined);
+  const domainType =
+    domainComposeId && normalizedType !== 'application' ? 'compose' : 'application';
+  const composeDomains = useDomainsByComposeId(
+    domainComposeId,
+    activeTab === 'domain' && !isApplication && Boolean(domainComposeId)
+  );
+  const applicationDomains = useDomainsByApplicationId(
+    domainApplicationId,
+    activeTab === 'domain' && !isApplication && !domainComposeId && Boolean(domainApplicationId)
+  );
+  const fetchedDomains = domainComposeId ? composeDomains.data : applicationDomains.data;
+  const domains =
+    application?.domains ??
+    dataRecord?.domains ??
+    (Array.isArray(fetchedDomains) && !isErrorResponse(fetchedDomains) ? fetchedDomains : []);
   const ports = application?.ports ?? [];
   const dockerContainerData =
     dockerContainers.data && !isErrorResponse(dockerContainers.data) ? dockerContainers.data : null;
@@ -84,6 +115,13 @@ export default function ItemDetailScreen() {
       if (activeTab === 'logs' && logsLookupName) {
         await dockerContainers.mutate();
       }
+      if (activeTab === 'domain') {
+        if (domainComposeId) {
+          await composeDomains.mutate();
+        } else if (domainApplicationId && !isApplication) {
+          await applicationDomains.mutate();
+        }
+      }
       await notifySuccess();
     } catch {
       await notifyError();
@@ -93,7 +131,12 @@ export default function ItemDetailScreen() {
   }, [
     activeTab,
     dockerContainers,
+    composeDomains,
+    applicationDomains,
+    domainApplicationId,
+    domainComposeId,
     isRefreshing,
+    isApplication,
     logsLookupName,
     notifyError,
     notifySuccess,
@@ -119,6 +162,21 @@ export default function ItemDetailScreen() {
       await notifyError();
     }
   }, [dockerContainers, impact, notifyError, notifySuccess]);
+  const handleDomainRefresh = useCallback(async () => {
+    await retry();
+    if (domainComposeId) {
+      await composeDomains.mutate();
+    } else if (domainApplicationId && !isApplication) {
+      await applicationDomains.mutate();
+    }
+  }, [
+    applicationDomains,
+    composeDomains,
+    domainApplicationId,
+    domainComposeId,
+    isApplication,
+    retry,
+  ]);
   const isDeploymentRunning = isApplication
     ? deployments.some((deployment) => (deployment.status ?? '').toLowerCase() === 'running')
     : false;
@@ -157,9 +215,7 @@ export default function ItemDetailScreen() {
 
   return (
     <SafeAreaView className="bg-background flex-1 px-4 pt-2" edges={['left', 'right']}>
-      <Stack.Screen
-        options={{ title, headerBackButtonDisplayMode: 'minimal' }}
-      />
+      <Stack.Screen options={{ title, headerBackButtonDisplayMode: 'minimal' }} />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.select({ ios: 'padding', android: undefined })}>
@@ -177,9 +233,9 @@ export default function ItemDetailScreen() {
             />
           }>
           <ItemDetailActions
-            isApplication={isApplication}
-            applicationId={application?.applicationId}
-            appName={application?.appName}
+            itemType={normalizedType}
+            itemId={itemId}
+            appName={actionAppName}
             isDeploymentRunning={isDeploymentRunning}
             onRefresh={retry}
           />
@@ -224,11 +280,13 @@ export default function ItemDetailScreen() {
             <ItemDetailDomains
               domains={domains}
               ports={ports}
-              isApplication={isApplication}
-              applicationId={application?.applicationId}
+              applicationId={domainType === 'application' ? domainApplicationId : undefined}
+              composeId={domainType === 'compose' ? domainComposeId : undefined}
+              domainType={domainType}
+              canManageDomains={Boolean(domainApplicationId || domainComposeId)}
               itemId={itemId}
               itemType={normalizedType ?? 'application'}
-              onRefresh={retry}
+              onRefresh={handleDomainRefresh}
             />
           ) : null}
 

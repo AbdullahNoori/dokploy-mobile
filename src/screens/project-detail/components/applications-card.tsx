@@ -33,6 +33,7 @@ export const ApplicationsCard = memo(function ApplicationsCard({ application, pr
         params: {
           itemId: application.id,
           itemName: application.name,
+          itemStatus: application.status ?? '',
           itemType: application.type,
           projectId,
         },

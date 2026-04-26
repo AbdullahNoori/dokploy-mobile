@@ -50,9 +50,11 @@ export function ItemDetailGeneral({ summary, details }: Props) {
         <Text className="text-base font-semibold">Details</Text>
         <View className="mt-3 gap-3">
           {details.map((row) => (
-            <View key={row.label} className="flex-row items-center justify-between">
-              <Text className="text-muted-foreground text-sm">{row.label}</Text>
-              <Text className="text-sm font-semibold">{row.value}</Text>
+            <View key={row.label} className="flex-row items-start justify-between gap-4">
+              <Text className="text-muted-foreground shrink-0 text-sm">{row.label}</Text>
+              <Text className="flex-1 text-right text-sm font-semibold" numberOfLines={2}>
+                {row.value}
+              </Text>
             </View>
           ))}
         </View>

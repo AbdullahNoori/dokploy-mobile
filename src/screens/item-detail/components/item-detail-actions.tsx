@@ -7,18 +7,19 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { THEME } from '@/lib/theme';
 import { useItemDetailActions } from '@/hooks/use-item-detail-actions';
+import type { ProjectItemType } from '@/types/projects';
 
 type Props = {
-  isApplication: boolean;
-  applicationId?: string;
+  itemType: ProjectItemType;
+  itemId?: string;
   appName?: string;
   isDeploymentRunning?: boolean;
   onRefresh: () => void;
 };
 
 export function ItemDetailActions({
-  isApplication,
-  applicationId,
+  itemType,
+  itemId,
   appName,
   isDeploymentRunning,
   onRefresh,
@@ -31,13 +32,16 @@ export function ItemDetailActions({
     isBusy,
     canDeploy,
     canReload,
+    canRebuild,
     canStop,
+    secondaryActionLabel,
     onDeploy,
     onReload,
+    onRebuild,
     onStop,
   } = useItemDetailActions({
-    isApplication,
-    applicationId,
+    itemType,
+    itemId,
     appName,
     isDeploymentRunning,
     onRefresh,
@@ -84,17 +88,24 @@ export function ItemDetailActions({
             </View>
           )}
           <Text className="text-xs" numberOfLines={1}>
-            Reload
+            {secondaryActionLabel}
           </Text>
         </Button>
         <Button
           variant="secondary"
-          disabled
           size="sm"
-          className="flex-1 gap-1.5 px-2.5">
-          <View className="w-4 items-center">
-            <Icon as={HammerIcon} className="text-secondary-foreground size-3.5" />
-          </View>
+          className="flex-1 gap-1.5 px-2.5"
+          disabled={!canRebuild || isBusy}
+          onPress={onRebuild}>
+          {activeAction === 'rebuild' ? (
+            <View className="w-4 items-center">
+              <ActivityIndicator size="small" color={secondarySpinner} />
+            </View>
+          ) : (
+            <View className="w-4 items-center">
+              <Icon as={HammerIcon} className="text-secondary-foreground size-3.5" />
+            </View>
+          )}
           <Text className="text-xs" numberOfLines={1}>
             Rebuild
           </Text>

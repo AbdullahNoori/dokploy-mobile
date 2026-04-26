@@ -28,6 +28,7 @@ const resolveErrorMessage = (error: unknown, fallback: string) => {
 export default function DomainCreateScreen() {
   const {
     applicationId,
+    composeId,
     defaultPort,
     mode,
     domainId,
@@ -39,8 +40,10 @@ export default function DomainCreateScreen() {
     port: portParam,
     certificateType: certificateTypeParam,
     domainType: domainTypeParam,
+    serviceName: serviceNameParam,
   } = useLocalSearchParams<{
     applicationId?: string;
+    composeId?: string;
     defaultPort?: string;
     mode?: 'edit' | 'create';
     domainId?: string;
@@ -52,16 +55,21 @@ export default function DomainCreateScreen() {
     port?: string;
     certificateType?: 'letsencrypt' | 'none' | 'custom';
     domainType?: 'compose' | 'application' | 'preview' | '';
+    serviceName?: string;
   }>();
   const router = useRouter();
   const { mutate } = useSWRConfig();
   const pathInputRef = useRef<TextInput>(null);
+  const serviceNameInputRef = useRef<TextInput>(null);
   const internalPathInputRef = useRef<TextInput>(null);
   const portInputRef = useRef<TextInput>(null);
 
   const isEdit = mode === 'edit' && !!domainId;
+  const resolvedDomainType = domainTypeParam || (composeId ? 'compose' : 'application');
+  const isComposeDomain = resolvedDomainType === 'compose';
 
   const [host, setHost] = useState(hostParam ?? '');
+  const [serviceName, setServiceName] = useState(serviceNameParam ?? '');
   const [path, setPath] = useState(pathParam ?? '/');
   const [internalPath, setInternalPath] = useState(internalPathParam ?? '/');
   const [stripPath, setStripPath] = useState(stripPathParam === 'true');
@@ -119,6 +127,25 @@ export default function DomainCreateScreen() {
       return;
     }
 
+    if (resolvedDomainType === 'application' && !applicationId) {
+      await notifyError();
+      toast.error('Missing application id.');
+      return;
+    }
+
+    if (resolvedDomainType === 'compose' && !composeId) {
+      await notifyError();
+      toast.error('Missing compose id.');
+      return;
+    }
+
+    const normalizedServiceName = serviceName.trim();
+    if (resolvedDomainType === 'compose' && !normalizedServiceName) {
+      await notifyError();
+      toast.error('Enter the compose service name.');
+      return;
+    }
+
     const resolvedDomainId = domainId ?? '';
 
     setIsSubmitting(true);
@@ -134,7 +161,8 @@ export default function DomainCreateScreen() {
           port: parsedPort ?? null,
           https,
           certificateType: https ? (certificateTypeParam ?? 'letsencrypt') : 'none',
-          domainType: domainTypeParam || undefined,
+          domainType: resolvedDomainType,
+          serviceName: resolvedDomainType === 'compose' ? normalizedServiceName : null,
         });
 
         if (isErrorResponse(result)) {
@@ -147,8 +175,9 @@ export default function DomainCreateScreen() {
         toast.success('Domain updated.');
       } else {
         const result = await domainCreate({
-          applicationId: applicationId ?? null,
-          domainType: 'application',
+          applicationId: resolvedDomainType === 'application' ? (applicationId ?? null) : null,
+          composeId: resolvedDomainType === 'compose' ? (composeId ?? null) : null,
+          domainType: resolvedDomainType,
           host: trimmedHost,
           path: normalizedPath ? normalizedPath : null,
           internalPath: normalizedInternalPath ? normalizedInternalPath : null,
@@ -156,6 +185,7 @@ export default function DomainCreateScreen() {
           port: parsedPort ?? null,
           https,
           certificateType: https ? 'letsencrypt' : undefined,
+          serviceName: resolvedDomainType === 'compose' ? normalizedServiceName : null,
         });
 
         if (isErrorResponse(result)) {
@@ -170,6 +200,11 @@ export default function DomainCreateScreen() {
 
       if (applicationId) {
         await mutate(['application/one', applicationId]);
+        await mutate(['domain/byApplicationId', applicationId]);
+      }
+      if (composeId) {
+        await mutate(['compose/one', composeId]);
+        await mutate(['domain/byComposeId', composeId]);
       }
       router.back();
     } catch (error) {
@@ -183,8 +218,9 @@ export default function DomainCreateScreen() {
   }, [
     applicationId,
     certificateTypeParam,
+    composeId,
     domainId,
-    domainTypeParam,
+    resolvedDomainType,
     host,
     impact,
     path,
@@ -198,6 +234,7 @@ export default function DomainCreateScreen() {
     mutate,
     notifyError,
     notifySuccess,
+    serviceName,
     router,
   ]);
 
@@ -233,9 +270,34 @@ export default function DomainCreateScreen() {
             onChangeText={setHost}
             returnKeyType="next"
             blurOnSubmit={false}
-            onSubmitEditing={() => pathInputRef.current?.focus()}
+            onSubmitEditing={() => {
+              if (isComposeDomain) {
+                serviceNameInputRef.current?.focus();
+                return;
+              }
+              pathInputRef.current?.focus();
+            }}
           />
         </View>
+
+        {isComposeDomain ? (
+          <View className="gap-2">
+            <Text className="text-sm font-semibold">Service Name</Text>
+            <Text variant="muted" className="text-xs">
+              Use the service key from the compose file.
+            </Text>
+            <Input
+              ref={serviceNameInputRef}
+              placeholder="web"
+              value={serviceName}
+              onChangeText={setServiceName}
+              autoCapitalize="none"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => pathInputRef.current?.focus()}
+            />
+          </View>
+        ) : null}
 
         <View className="gap-2">
           <Text className="text-sm font-semibold">Path</Text>

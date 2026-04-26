@@ -23,3 +23,11 @@ export type ApplicationStopRequest = {
 export type ApplicationStopResponseBody = Record<string, unknown>;
 
 export type ApplicationStopResponse = models.ErrorT | ApplicationStopResponseBody;
+
+export type ServiceDeployResponse = models.ErrorT | undefined | Record<string, unknown>;
+
+export type ServiceReloadResponse = models.ErrorT | boolean;
+
+export type ServiceRebuildResponse = models.ErrorT | boolean;
+
+export type ServiceStopResponse = models.ErrorT | undefined | Record<string, unknown>;

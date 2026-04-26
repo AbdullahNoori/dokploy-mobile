@@ -19,8 +19,10 @@ import { ItemDetailEmptyState } from './item-detail-empty';
 
 type Props = {
   domains: ApplicationOneDomain[];
-  isApplication: boolean;
   applicationId?: string;
+  composeId?: string;
+  domainType: 'application' | 'compose';
+  canManageDomains: boolean;
   itemId: string;
   itemType: string;
   ports: ApplicationOnePort[];
@@ -40,8 +42,10 @@ const resolveErrorMessage = (error: unknown, fallback: string) => {
 
 export function ItemDetailDomains({
   domains,
-  isApplication,
   applicationId,
+  composeId,
+  domainType,
+  canManageDomains,
   itemId,
   itemType,
   ports,
@@ -122,10 +126,12 @@ export function ItemDetailDomains({
         itemId,
         itemType,
         applicationId,
+        composeId,
+        domainType,
         defaultPort: defaultPort ? String(defaultPort) : '',
       },
     });
-  }, [applicationId, defaultPort, impact, itemId, itemType, router]);
+  }, [applicationId, composeId, defaultPort, domainType, impact, itemId, itemType, router]);
 
   const openEditDomain = useCallback(
     async (domain: ApplicationOneDomain) => {
@@ -136,6 +142,7 @@ export function ItemDetailDomains({
           itemId,
           itemType,
           applicationId,
+          composeId,
           defaultPort: defaultPort ? String(defaultPort) : '',
           mode: 'edit',
           domainId: domain.domainId,
@@ -146,19 +153,20 @@ export function ItemDetailDomains({
           https: String(domain.https),
           port: domain.port ? String(domain.port) : '',
           certificateType: domain.certificateType,
-          domainType: domain.domainType ?? '',
+          domainType: domain.domainType ?? domainType,
+          serviceName: domain.serviceName ?? '',
         },
       });
     },
-    [applicationId, defaultPort, impact, itemId, itemType, router]
+    [applicationId, composeId, defaultPort, domainType, impact, itemId, itemType, router]
   );
 
-  if (!isApplication) {
+  if (!canManageDomains) {
     return (
       <View className="mt-4">
         <ItemDetailEmptyState
           title="Domains"
-          description="Domains are only available for applications."
+          description="Domains need an application or compose owner from Dokploy."
         />
       </View>
     );
@@ -169,7 +177,6 @@ export function ItemDetailDomains({
       <View className="flex-row items-center justify-between">
         <View>
           <Text className="text-base font-semibold">Domains</Text>
-          <Text variant="muted">Domains are used to access the application.</Text>
         </View>
         <Button
           size="sm"
@@ -184,7 +191,7 @@ export function ItemDetailDomains({
       {domains.length === 0 ? (
         <ItemDetailEmptyState
           title="No domains yet"
-          description="Add your first domain to expose this app."
+          description={`Add your first domain to expose this ${domainType === 'compose' ? 'compose service' : 'app'}.`}
         />
       ) : (
         <View className="gap-3">
@@ -217,6 +224,11 @@ export function ItemDetailDomains({
                 {domain.https ? (
                   <View className="bg-muted rounded-full px-2 py-0.5">
                     <Text className="text-xs">Cert: {domain.certificateType}</Text>
+                  </View>
+                ) : null}
+                {domain.serviceName ? (
+                  <View className="bg-muted rounded-full px-2 py-0.5">
+                    <Text className="text-xs">Service: {domain.serviceName}</Text>
                   </View>
                 ) : null}
               </View>

@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 import { toast } from 'sonner-native';
 import { useUniwind } from 'uniwind';
 
@@ -31,6 +24,7 @@ import type { PostgresOneResponseBody } from '@/types/postgres';
 import type { ProjectItemType } from '@/types/projects';
 import type { RedisOneResponseBody } from '@/types/redis';
 
+import { EnvHighlightedInput, EnvHighlighter } from './env-highlighter';
 import { ItemDetailEmptyState } from './item-detail-empty';
 
 type EnvironmentItem =
@@ -64,7 +58,6 @@ const resolveErrorMessage = (error: unknown, fallback: string) => {
 export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
-  const envTintColor = THEME[resolvedTheme].chart2;
   const [mode, setMode] = useState<'edit' | 'preview'>('preview');
   const [draft, setDraft] = useState('');
   const [lastSaved, setLastSaved] = useState('');
@@ -81,11 +74,6 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
     setDraft(envValue);
     setLastSaved(envValue);
   }, [envValue]);
-
-  const lineNumbers = useMemo(() => {
-    const lines = draft.length ? draft.split('\n') : [''];
-    return lines.map((_, index) => index + 1);
-  }, [draft]);
 
   const maxEditorHeight = 320;
   const editorContainerHeight = editorHeight + 16;
@@ -258,29 +246,15 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
             mode === 'edit' ? 'bg-muted/60' : 'bg-muted/40'
           )}
           style={{ height: editorContainerHeight }}>
-          <View
-            className="bg-muted/80 border-border/80 w-9 items-end border-r px-2 py-3"
-            style={{ height: editorHeight }}>
-            {lineNumbers.map((lineNumber) => (
-              <Text key={lineNumber} className="text-muted-foreground font-mono text-xs leading-5">
-                {lineNumber}
-              </Text>
-            ))}
-          </View>
-          <View
-            className="flex-1 px-3 py-2"
-            style={{ height: editorHeight, opacity: mode === 'preview' ? 0.7 : 1 }}>
-            <TextInput
-              className="text-foreground font-mono text-sm leading-5"
-              multiline
-              scrollEnabled
-              textAlignVertical="top"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={mode === 'edit'}
+          {mode === 'preview' ? (
+            <EnvHighlighter content={draft} height={editorHeight} themeName={resolvedTheme} />
+          ) : (
+            <EnvHighlightedInput
+              content={draft}
+              height={editorHeight}
+              themeName={resolvedTheme}
               placeholder="KEY=value"
               placeholderTextColor={THEME[resolvedTheme].mutedForeground}
-              value={draft}
               onChangeText={setDraft}
               onContentSizeChange={(event) => {
                 const nextHeight = Math.min(
@@ -289,9 +263,8 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
                 );
                 setEditorHeight(nextHeight);
               }}
-              style={{ height: editorHeight, maxHeight: maxEditorHeight, color: envTintColor }}
             />
-          </View>
+          )}
         </View>
 
         <View className="mt-4 flex-row gap-3">

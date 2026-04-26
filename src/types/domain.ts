@@ -19,6 +19,16 @@ export type DomainCreateRequest = {
 
 export type DomainCreateResponse = ApplicationOneDomain | models.ErrorT;
 
+export type DomainByApplicationIdRequest = {
+  applicationId: string;
+};
+
+export type DomainByComposeIdRequest = {
+  composeId: string;
+};
+
+export type DomainListResponse = ApplicationOneDomain[] | models.ErrorT;
+
 export type DomainUpdateRequest = {
   domainId: string;
   host: string;

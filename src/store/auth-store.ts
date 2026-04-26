@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 
-import { readHaveRootAccess } from '@/api/user';
-import { ProjectAllResponse } from '@/types/projects';
-import { getRequest } from '@/lib/http';
+import { readHaveRootAccess, verifyApiKeyAccess } from '@/api/user';
 import {
   clearCredentials,
   getPat,
@@ -90,22 +88,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   login: async ({ serverUrl, pat }) => {
-    await getRequest<ProjectAllResponse>('project/all', undefined, {
+    const { hasRootAccess } = await verifyApiKeyAccess({
       baseURL: serverUrl,
-      headers: {
-        'x-api-key': pat,
-      },
+      apiKey: pat,
     });
 
     setServerUrl(serverUrl);
     await setPat(pat);
     set({
       status: 'signedIn',
-      rootAccessStatus: 'unknown',
-      hasRootAccess: false,
+      rootAccessStatus: hasRootAccess ? 'allowed' : 'denied',
+      hasRootAccess,
       shouldShowPushOnboarding: true,
     });
-    await get().refreshRootAccess();
   },
 
   logout: async () => {

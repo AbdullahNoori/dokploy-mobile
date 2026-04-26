@@ -1,5 +1,6 @@
 import { getRequest } from '@/lib/http';
 import { HttpError } from '@/lib/http-error';
+import { DokployRequestConfig } from '@/lib/http';
 
 type RootAccessErrorResponse = {
   code?: string;
@@ -50,7 +51,7 @@ export async function readHaveRootAccess(): Promise<boolean> {
   try {
     const response = await getRequest<unknown>('user/haveRootAccess', undefined, {
       skipUnauthorizedHandler: true,
-    }); 
+    });
 
     if (isErrorResponse(response)) {
       if (isRootAccessDenied(response)) {
@@ -68,4 +69,45 @@ export async function readHaveRootAccess(): Promise<boolean> {
 
     throw error;
   }
+}
+
+type VerifyApiKeyAccessPayload = {
+  baseURL: string;
+  apiKey: string;
+};
+
+export async function verifyApiKeyAccess(
+  payload: VerifyApiKeyAccessPayload
+): Promise<{ hasRootAccess: boolean }> {
+  try {
+    const response = await getRequest<unknown>('user/haveRootAccess', undefined, {
+      ...buildApiKeyConfig(payload),
+      skipUnauthorizedHandler: true,
+    });
+
+    if (isErrorResponse(response)) {
+      if (isRootAccessDenied(response)) {
+        return { hasRootAccess: false };
+      }
+
+      throw new Error(response.message ?? response.error ?? 'Unable to verify access.');
+    }
+
+    return { hasRootAccess: true };
+  } catch (error) {
+    if (isRootAccessDenied(error)) {
+      return { hasRootAccess: false };
+    }
+
+    throw error;
+  }
+}
+
+function buildApiKeyConfig(payload: VerifyApiKeyAccessPayload): DokployRequestConfig {
+  return {
+    baseURL: payload.baseURL,
+    headers: {
+      'x-api-key': payload.apiKey,
+    },
+  };
 }

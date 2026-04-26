@@ -29,6 +29,11 @@ type ParsedLogRow = {
   severity: LogRowTone;
 };
 type LogPalette = {
+  bg: string;
+  surface: string;
+  chrome: string;
+  border: string;
+  text: string;
   muted: string;
   line: string;
   warn: string;
@@ -36,6 +41,9 @@ type LogPalette = {
   success: string;
   info: string;
   debug: string;
+  statusConnected: string;
+  statusConnecting: string;
+  statusIdle: string;
   accentInfoBg: string;
   accentDebugBg: string;
   accentWarnBg: string;
@@ -187,7 +195,7 @@ function getTonePresentation(tone: LogRowTone, palette: LogPalette): TonePresent
     default:
       return {
         label: '',
-        textColor: palette.muted,
+        textColor: palette.line,
         pillBackground: 'transparent',
         accentBackground: palette.accentDefaultBg,
       };
@@ -273,7 +281,7 @@ function LogLine({ line, palette }: { line: string; palette: LogPalette }) {
       }}>
       <View
         className="mt-1 rounded-full"
-        style={{ width: 12, minHeight: 28, backgroundColor: presentation.accentBackground }}
+        style={{ width: 3, minHeight: 20, backgroundColor: presentation.accentBackground }}
       />
       {hasTimestamp ? (
         <Text
@@ -352,33 +360,33 @@ export function ItemDetailLogs({
   const { impact } = useHaptics();
   const palette = useMemo(
     () => ({
-      bg: resolvedTheme === 'dark' ? 'hsl(0 0% 6%)' : 'hsl(60 10% 98%)',
-      surface: resolvedTheme === 'dark' ? 'hsl(120 7% 9%)' : 'hsl(60 11% 95%)',
-      chrome: resolvedTheme === 'dark' ? 'hsl(120 7% 12%)' : 'hsl(60 10% 93%)',
-      border: resolvedTheme === 'dark' ? 'hsl(120 6% 17%)' : 'hsl(48 10% 84%)',
-      text: resolvedTheme === 'dark' ? 'hsl(96 20% 85%)' : 'hsl(120 10% 16%)',
-      muted: resolvedTheme === 'dark' ? 'hsl(102 8% 58%)' : 'hsl(120 7% 40%)',
+      bg: THEME[resolvedTheme].background,
+      surface: THEME[resolvedTheme].card,
+      chrome: THEME[resolvedTheme].muted,
+      border: THEME[resolvedTheme].border,
+      text: THEME[resolvedTheme].foreground,
+      muted: THEME[resolvedTheme].mutedForeground,
       warn: THEME[resolvedTheme].chart4,
       error: THEME[resolvedTheme].destructive,
       success: THEME[resolvedTheme].chart2,
-      info: resolvedTheme === 'dark' ? 'hsl(214 90% 68%)' : 'hsl(219 74% 47%)',
-      debug: resolvedTheme === 'dark' ? 'hsl(45 90% 63%)' : 'hsl(42 85% 42%)',
-      line: resolvedTheme === 'dark' ? 'hsl(96 16% 82%)' : 'hsl(120 8% 18%)',
-      accentInfoBg:
-        resolvedTheme === 'dark' ? 'hsla(219 72% 32% / 0.7)' : 'hsla(219 74% 28% / 0.18)',
-      accentDebugBg:
-        resolvedTheme === 'dark' ? 'hsla(37 75% 24% / 0.9)' : 'hsla(37 78% 31% / 0.18)',
+      info: THEME[resolvedTheme].foreground,
+      debug: THEME[resolvedTheme].mutedForeground,
+      line: THEME[resolvedTheme].foreground,
+      statusConnected: THEME[resolvedTheme].chart2,
+      statusConnecting: THEME[resolvedTheme].chart4,
+      statusIdle: THEME[resolvedTheme].mutedForeground,
+      accentInfoBg: resolvedTheme === 'dark' ? 'hsla(0 0% 64% / 0.35)' : 'hsla(0 0% 30% / 0.18)',
+      accentDebugBg: resolvedTheme === 'dark' ? 'hsla(0 0% 64% / 0.28)' : 'hsla(0 0% 30% / 0.14)',
       accentWarnBg:
-        resolvedTheme === 'dark' ? 'hsla(44 82% 26% / 0.95)' : 'hsla(43 84% 36% / 0.18)',
-      accentErrorBg: resolvedTheme === 'dark' ? 'hsla(0 68% 30% / 0.92)' : 'hsla(0 74% 38% / 0.18)',
+        resolvedTheme === 'dark' ? 'hsla(43 74% 66% / 0.55)' : 'hsla(43 74% 42% / 0.22)',
+      accentErrorBg: resolvedTheme === 'dark' ? 'hsla(0 71% 59% / 0.55)' : 'hsla(0 84% 48% / 0.22)',
       accentSuccessBg:
-        resolvedTheme === 'dark' ? 'hsla(153 71% 22% / 0.95)' : 'hsla(160 72% 28% / 0.18)',
-      accentDefaultBg:
-        resolvedTheme === 'dark' ? 'hsla(217 59% 31% / 0.95)' : 'hsla(219 74% 38% / 0.18)',
-      rowWarnBg: resolvedTheme === 'dark' ? 'hsla(35 88% 14% / 0.45)' : 'hsla(39 95% 84% / 0.45)',
-      rowDebugBg: resolvedTheme === 'dark' ? 'hsla(31 76% 13% / 0.45)' : 'hsla(34 91% 84% / 0.36)',
+        resolvedTheme === 'dark' ? 'hsla(160 60% 45% / 0.5)' : 'hsla(173 58% 34% / 0.2)',
+      accentDefaultBg: resolvedTheme === 'dark' ? 'hsla(0 0% 64% / 0.22)' : 'hsla(0 0% 30% / 0.12)',
+      rowWarnBg: resolvedTheme === 'dark' ? 'hsla(43 74% 66% / 0.08)' : 'hsla(43 74% 66% / 0.16)',
+      rowDebugBg: resolvedTheme === 'dark' ? 'hsla(0 0% 64% / 0.05)' : 'hsla(0 0% 30% / 0.05)',
       rowSuccessBg:
-        resolvedTheme === 'dark' ? 'hsla(149 58% 12% / 0.38)' : 'hsla(145 58% 84% / 0.32)',
+        resolvedTheme === 'dark' ? 'hsla(160 60% 45% / 0.07)' : 'hsla(173 58% 39% / 0.12)',
       monoFont: Platform.select({
         ios: 'Menlo',
         android: 'monospace',
@@ -405,13 +413,13 @@ export function ItemDetailLogs({
       : error
         ? 'Interrupted'
         : 'Idle';
-  const statusToneClass = isConnected
-    ? 'bg-emerald-500'
+  const statusToneColor = isConnected
+    ? palette.statusConnected
     : isConnecting
-      ? 'bg-amber-500'
+      ? palette.statusConnecting
       : error
-        ? 'bg-rose-500'
-        : 'bg-muted-foreground/40';
+        ? palette.error
+        : palette.statusIdle;
 
   if (!hasLookupName) {
     return (
@@ -470,7 +478,7 @@ export function ItemDetailLogs({
           </Text>
         </View>
         <View className="flex-row items-center gap-2">
-          <View className={`h-2 w-2 rounded-full ${statusToneClass}`} />
+          <View className="h-2 w-2 rounded-full" style={{ backgroundColor: statusToneColor }} />
           <Text
             className="font-mono text-[11px] tracking-[1.6px] uppercase"
             style={{ color: palette.muted }}>

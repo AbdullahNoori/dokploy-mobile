@@ -63,6 +63,7 @@ export type ApplicationOneResponseBody = {
   branch?: string | null | undefined;
   createdAt?: string | undefined;
   env?: string | null | undefined;
+  serverId?: string | null | undefined;
   environment: {
     name: string;
     project?: {

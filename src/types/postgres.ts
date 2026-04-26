@@ -2,6 +2,8 @@ import type { models } from '@/types/error';
 
 export type PostgresOneResponseBody = {
   postgresId: string;
+  applicationId?: string | null;
+  composeId?: string | null;
   name: string;
   appName: string;
   applicationStatus: string;
@@ -12,6 +14,7 @@ export type PostgresOneResponseBody = {
   cpuLimit: string | null;
   env: string | null;
   createdAt: string;
+  serverId: string | null;
   environment: {
     name: string;
     project?: {
