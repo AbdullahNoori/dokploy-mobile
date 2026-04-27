@@ -6,12 +6,17 @@ const androidGoogleServicesFile =
   process.env.GOOGLE_SERVICES_JSON ?? './src/config/google-services.json';
 const plugins = expo.plugins ?? [];
 const hasRNFirebaseIOSPlugin = plugins.includes('./plugins/with-rn-firebase-ios');
+const hasAndroidNdkVersionPlugin = plugins.includes('./plugins/with-android-ndk-version');
+
+const resolvedPlugins = [
+  ...plugins,
+  ...(!hasRNFirebaseIOSPlugin ? ['./plugins/with-rn-firebase-ios'] : []),
+  ...(!hasAndroidNdkVersionPlugin ? ['./plugins/with-android-ndk-version'] : []),
+];
 
 module.exports = {
   ...expo,
-  plugins: hasRNFirebaseIOSPlugin
-    ? plugins
-    : [...plugins, './plugins/with-rn-firebase-ios'],
+  plugins: resolvedPlugins,
   ios: {
     ...expo.ios,
     googleServicesFile: iosGoogleServicesFile,

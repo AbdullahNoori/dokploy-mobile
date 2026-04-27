@@ -27,11 +27,14 @@ export default function TabLayout() {
     <NativeTabs>
       <NativeTabs.Trigger name="(projects)">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="house.fill" md="home" />
+        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="(settings)">
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="gear" md="settings" />
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'gear', selected: 'gearshape.fill' }}
+          md="settings"
+        />
       </NativeTabs.Trigger>
     </NativeTabs>
   );
