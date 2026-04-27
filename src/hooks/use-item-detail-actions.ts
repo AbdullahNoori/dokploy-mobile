@@ -62,7 +62,7 @@ export function useItemDetailActions({
   const isCompose = itemType === 'compose';
   const isDatabase = !isApplication && !isCompose;
   const hasItemId = Boolean(itemId);
-  const canDeploy = hasItemId && (!isApplication || !isDeploymentRunning);
+  const canDeploy = hasItemId && !isDeploymentRunning;
   const canStop = hasItemId;
   const canReload = hasItemId && (isCompose || Boolean(appName)) && !isDeploymentRunning;
   const canRebuild = hasItemId && isDatabase;

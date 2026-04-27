@@ -27,6 +27,8 @@ import { ItemDetailLogs } from './components/item-detail-logs';
 import { ItemDetailSkeleton } from './components/item-detail-skeleton';
 import { ItemDetailTabs, type TabKey } from './components/item-detail-tabs';
 
+const EMPTY_CONTAINER_IDS: string[] = [];
+
 export default function ItemDetailScreen() {
   const { itemId, itemName, itemStatus, itemType } = useLocalSearchParams<{
     itemId: string;
@@ -52,6 +54,8 @@ export default function ItemDetailScreen() {
     summary,
     details,
     deployments,
+    isDeploymentsLoading,
+    deploymentsError,
     logsLookupName,
     logsLookupAppType,
     logsLookupServerId,
@@ -248,7 +252,7 @@ export default function ItemDetailScreen() {
           {activeTab === 'logs' ? (
             <ItemDetailLogs
               hasLookupName={Boolean(logsLookupName)}
-              selectedContainerId={dockerContainerData?.containerIds?.[0]}
+              containerIds={dockerContainerData?.containerIds ?? EMPTY_CONTAINER_IDS}
               isLookupLoading={Boolean(dockerContainers.isLoading)}
               lookupError={dockerContainerError}
               onRetryLookup={() => {
@@ -258,7 +262,14 @@ export default function ItemDetailScreen() {
           ) : null}
 
           {activeTab === 'deployments' ? (
-            isApplication ? (
+            isDeploymentsLoading ? (
+              <ItemDetailEmptyState
+                title="Deployments"
+                description="Loading deployments for this service."
+              />
+            ) : deploymentsError ? (
+              <ItemDetailEmptyState title="Deployments" description={deploymentsError} />
+            ) : deployments.length > 0 ? (
               <ItemDetailDeployments deployments={deployments} itemId={itemId} />
             ) : (
               <ItemDetailEmptyState

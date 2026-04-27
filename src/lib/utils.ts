@@ -1,7 +1,9 @@
+import { Platform } from 'react-native';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 import { getPat, getWebSocketBaseUrl } from './http-config';
+import { THEME } from './theme';
 import type { models } from '@/types/error';
 import type { ProjectAllEnvironment } from '@/types/projects';
 import type { SettingsRequestLogEntry, SettingsRequestStatusFamily } from '@/types/settings';
@@ -274,6 +276,233 @@ export function getRequestPath(item: SettingsRequestLogEntry) {
 
 export function getRequestMethod(item: SettingsRequestLogEntry) {
   return item.RequestMethod || 'REQUEST';
+}
+
+export const LOG_VIEWPORT_HEIGHT = 360;
+export const TIMESTAMP_COLUMN_WIDTH = 164;
+export const SEVERITY_PILL_WIDTH = 58;
+
+export type LogRowTone = 'default' | 'info' | 'debug' | 'warn' | 'error' | 'success';
+
+export type ParsedLogRow = {
+  timestampLabel: string;
+  message: string;
+  severity: LogRowTone;
+};
+
+export type LogPalette = {
+  bg: string;
+  surface: string;
+  chrome: string;
+  border: string;
+  text: string;
+  muted: string;
+  line: string;
+  warn: string;
+  error: string;
+  success: string;
+  info: string;
+  debug: string;
+  accentInfoBg: string;
+  accentDebugBg: string;
+  accentWarnBg: string;
+  accentErrorBg: string;
+  accentSuccessBg: string;
+  accentDefaultBg: string;
+  rowWarnBg: string;
+  rowDebugBg: string;
+  rowSuccessBg: string;
+  monoFont: string;
+};
+
+type TonePresentation = {
+  label: string;
+  textColor: string;
+  pillBackground: string;
+  accentBackground: string;
+  rowBackground?: string;
+};
+
+const LEADING_TIMESTAMP_PATTERN =
+  /^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)(?:\s+|$)(.*)$/;
+
+export function escapeMarkdownLine(value: string) {
+  if (value.length === 0) {
+    return '\u00A0';
+  }
+
+  return value.replace(/\\/g, '\\\\').replace(/([`*_{}\[\]()#+\-.!>|])/g, '\\$1');
+}
+
+export function getContainerOptionLabel(containerId: string, index: number) {
+  const shortId = containerId.length > 12 ? containerId.slice(0, 12) : containerId;
+
+  return `${index + 1} · ${shortId}`;
+}
+
+export function getUniqueContainerIds(containerIds: string[]) {
+  return Array.from(new Set(containerIds.filter((containerId) => containerId.length > 0)));
+}
+
+function getLogRowTone(value: string): LogRowTone {
+  const normalized = value.toLowerCase();
+
+  if (
+    normalized.includes(' debug ') ||
+    normalized.startsWith('debug') ||
+    normalized.includes('django version')
+  ) {
+    return 'debug';
+  }
+
+  if (
+    normalized.includes(' info ') ||
+    normalized.startsWith('info') ||
+    normalized.includes('syntaxwarning') ||
+    normalized.includes('system check') ||
+    normalized.includes('quit the server')
+  ) {
+    return 'info';
+  }
+
+  if (
+    normalized.includes(' error ') ||
+    normalized.startsWith('error') ||
+    normalized.includes('failed') ||
+    normalized.includes('exception')
+  ) {
+    return 'error';
+  }
+
+  if (normalized.includes(' warn ') || normalized.startsWith('warn')) {
+    return 'warn';
+  }
+
+  if (
+    normalized.includes('ready') ||
+    normalized.includes('listening') ||
+    normalized.includes('passed') ||
+    normalized.includes('starting asgi') ||
+    normalized.includes('development server')
+  ) {
+    return 'success';
+  }
+
+  return 'default';
+}
+
+function formatLogTimestamp(value: string) {
+  const normalized = value.endsWith('Z') ? value : `${value}Z`;
+  const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return '';
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  }).format(parsed);
+}
+
+export function parseLogRow(line: string): ParsedLogRow {
+  const match = line.match(LEADING_TIMESTAMP_PATTERN);
+  const timestampLabel = match ? formatLogTimestamp(match[1]) : '';
+  const message = match ? match[2].trim() || line : line;
+
+  return {
+    timestampLabel,
+    message,
+    severity: getLogRowTone(message),
+  };
+}
+
+export function createLogPalette(resolvedTheme: 'dark' | 'light'): LogPalette {
+  return {
+    bg: THEME[resolvedTheme].background,
+    surface: THEME[resolvedTheme].card,
+    chrome: THEME[resolvedTheme].muted,
+    border: THEME[resolvedTheme].border,
+    text: THEME[resolvedTheme].foreground,
+    muted: THEME[resolvedTheme].mutedForeground,
+    warn: THEME[resolvedTheme].chart4,
+    error: THEME[resolvedTheme].destructive,
+    success: THEME[resolvedTheme].chart2,
+    info: THEME[resolvedTheme].foreground,
+    debug: THEME[resolvedTheme].mutedForeground,
+    line: THEME[resolvedTheme].foreground,
+    accentInfoBg: resolvedTheme === 'dark' ? 'hsla(0 0% 64% / 0.35)' : 'hsla(0 0% 30% / 0.18)',
+    accentDebugBg: resolvedTheme === 'dark' ? 'hsla(0 0% 64% / 0.28)' : 'hsla(0 0% 30% / 0.14)',
+    accentWarnBg: resolvedTheme === 'dark' ? 'hsla(43 74% 66% / 0.55)' : 'hsla(43 74% 42% / 0.22)',
+    accentErrorBg: resolvedTheme === 'dark' ? 'hsla(0 71% 59% / 0.55)' : 'hsla(0 84% 48% / 0.22)',
+    accentSuccessBg:
+      resolvedTheme === 'dark' ? 'hsla(160 60% 45% / 0.5)' : 'hsla(173 58% 34% / 0.2)',
+    accentDefaultBg: resolvedTheme === 'dark' ? 'hsla(0 0% 64% / 0.22)' : 'hsla(0 0% 30% / 0.12)',
+    rowWarnBg: resolvedTheme === 'dark' ? 'hsla(43 74% 66% / 0.08)' : 'hsla(43 74% 66% / 0.16)',
+    rowDebugBg: resolvedTheme === 'dark' ? 'hsla(0 0% 64% / 0.05)' : 'hsla(0 0% 30% / 0.05)',
+    rowSuccessBg:
+      resolvedTheme === 'dark' ? 'hsla(160 60% 45% / 0.07)' : 'hsla(173 58% 39% / 0.12)',
+    monoFont: Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }),
+  };
+}
+
+export function getTonePresentation(tone: LogRowTone, palette: LogPalette): TonePresentation {
+  switch (tone) {
+    case 'info':
+      return {
+        label: 'info',
+        textColor: palette.info,
+        pillBackground: palette.accentInfoBg,
+        accentBackground: palette.accentInfoBg,
+      };
+    case 'debug':
+      return {
+        label: 'debug',
+        textColor: palette.debug,
+        pillBackground: palette.accentDebugBg,
+        accentBackground: palette.accentDebugBg,
+        rowBackground: palette.rowDebugBg,
+      };
+    case 'warn':
+      return {
+        label: 'warn',
+        textColor: palette.warn,
+        pillBackground: palette.accentWarnBg,
+        accentBackground: palette.accentWarnBg,
+        rowBackground: palette.rowWarnBg,
+      };
+    case 'error':
+      return {
+        label: 'error',
+        textColor: palette.error,
+        pillBackground: palette.accentErrorBg,
+        accentBackground: palette.accentErrorBg,
+      };
+    case 'success':
+      return {
+        label: 'ok',
+        textColor: palette.success,
+        pillBackground: palette.accentSuccessBg,
+        accentBackground: palette.accentSuccessBg,
+        rowBackground: palette.rowSuccessBg,
+      };
+    default:
+      return {
+        label: '',
+        textColor: palette.line,
+        pillBackground: 'transparent',
+        accentBackground: palette.accentDefaultBg,
+      };
+  }
 }
 
 export function normalizeHeaders(headers: Record<string, string> | undefined) {

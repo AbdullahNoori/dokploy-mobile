@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 
 import { useApplicationOne } from '@/api/application';
 import { useComposeOne } from '@/api/compose';
+import { useDeploymentsByType } from '@/api/deployment';
 import { useMariadbOne } from '@/api/mariadb';
 import { useMongoOne } from '@/api/mongo';
 import { useMysqlOne } from '@/api/mysql';
@@ -10,6 +11,7 @@ import { useRedisOne } from '@/api/redis';
 import { isErrorResponse } from '@/lib/utils';
 import type { ApplicationOneResponseBody } from '@/types/application';
 import type { ComposeOneResponseBody } from '@/types/compose';
+import type { DeploymentAllByTypeRequest } from '@/types/deployment';
 import type { MariadbOneResponseBody } from '@/types/mariadb';
 import type { MongoOneResponseBody } from '@/types/mongo';
 import type { MysqlOneResponseBody } from '@/types/mysql';
@@ -68,6 +70,8 @@ type ItemDetailState = {
   summary: DetailSummary | null;
   details: DetailRow[];
   deployments: DeploymentRow[];
+  isDeploymentsLoading: boolean;
+  deploymentsError: string | null;
   logsLookupName: string | null;
   logsLookupAppType: DockerAppType | undefined;
   logsLookupServerId: string | undefined;
@@ -85,6 +89,65 @@ const toDetailValue = (value: unknown) => {
 
 const toOptionalString = (value: unknown) =>
   typeof value === 'string' && value ? value : undefined;
+
+const mapDeployment = (deployment: {
+  deploymentId: string;
+  title: string;
+  description?: string | null;
+  status?: string | null;
+  logPath?: string | null;
+  pid?: string | null;
+  applicationId?: string | null;
+  composeId?: string | null;
+  serverId?: string | null;
+  isPreviewDeployment?: boolean | null;
+  previewDeploymentId?: string | null;
+  createdAt: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  errorMessage?: string | null;
+  scheduleId?: string | null;
+  backupId?: string | null;
+  rollbackId?: string | null;
+  volumeBackupId?: string | null;
+  buildServerId?: string | null;
+}): DeploymentRow => ({
+  id: deployment.deploymentId,
+  title: deployment.title,
+  description: deployment.description ?? null,
+  status: deployment.status ?? null,
+  logPath: deployment.logPath ?? null,
+  pid: deployment.pid ?? null,
+  applicationId: deployment.applicationId ?? null,
+  composeId: deployment.composeId ?? null,
+  serverId: deployment.serverId ?? null,
+  isPreviewDeployment: deployment.isPreviewDeployment ?? false,
+  previewDeploymentId: deployment.previewDeploymentId ?? null,
+  createdAt: deployment.createdAt,
+  startedAt: deployment.startedAt ?? null,
+  finishedAt: deployment.finishedAt ?? null,
+  errorMessage: deployment.errorMessage ?? null,
+  scheduleId: deployment.scheduleId ?? null,
+  backupId: deployment.backupId ?? null,
+  rollbackId: deployment.rollbackId ?? null,
+  volumeBackupId: deployment.volumeBackupId ?? null,
+  buildServerId: deployment.buildServerId ?? null,
+});
+
+const sortDeployments = (deployments: DeploymentRow[]) =>
+  deployments.slice().sort((a, b) => {
+    const statusA = a.status ?? '';
+    const statusB = b.status ?? '';
+    const isRunningA = statusA.toLowerCase() === 'running';
+    const isRunningB = statusB.toLowerCase() === 'running';
+    if (isRunningA !== isRunningB) return isRunningA ? -1 : 1;
+    const timeA = new Date(a.createdAt).getTime();
+    const timeB = new Date(b.createdAt).getTime();
+    if (!Number.isNaN(timeA) && !Number.isNaN(timeB)) {
+      return timeB - timeA;
+    }
+    return 0;
+  });
 
 export function useItemDetailScreen(
   itemType: ProjectItemType | undefined,
@@ -131,6 +194,31 @@ export function useItemDetailScreen(
     }
     return data;
   }, [data]);
+
+  const deploymentLookup = useMemo<DeploymentAllByTypeRequest | null>(() => {
+    if (!detailData || !itemType || !itemId) return null;
+
+    if (itemType === 'application') {
+      return {
+        id: toOptionalString((detailData as ApplicationOneResponseBody).applicationId) ?? itemId,
+        type: 'application',
+      };
+    }
+
+    if (itemType === 'compose') {
+      return {
+        id: (detailData as ComposeOneResponseBody).composeId ?? itemId,
+        type: 'compose',
+      };
+    }
+
+    return {
+      id: itemId,
+      type: itemType,
+    };
+  }, [detailData, itemId, itemType]);
+
+  const deploymentsRequest = useDeploymentsByType(deploymentLookup);
 
   const summary = useMemo<DetailSummary | null>(() => {
     if (!detailData) return null;
@@ -195,45 +283,15 @@ export function useItemDetailScreen(
   }, [detailData, itemType]);
 
   const deployments = useMemo<DeploymentRow[]>(() => {
+    if (deploymentsRequest.data && !isErrorResponse(deploymentsRequest.data)) {
+      return sortDeployments(deploymentsRequest.data.map(mapDeployment));
+    }
+
     if (!detailData || itemType !== 'application') return [];
+
     const app = detailData as ApplicationOneResponseBody;
-    return (app.deployments ?? [])
-      .map((deployment) => ({
-        id: deployment.deploymentId,
-        title: deployment.title,
-        description: deployment.description ?? null,
-        status: deployment.status ?? null,
-        logPath: deployment.logPath ?? null,
-        pid: deployment.pid ?? null,
-        applicationId: deployment.applicationId ?? null,
-        composeId: deployment.composeId ?? null,
-        serverId: deployment.serverId ?? null,
-        isPreviewDeployment: deployment.isPreviewDeployment ?? false,
-        previewDeploymentId: deployment.previewDeploymentId ?? null,
-        createdAt: deployment.createdAt,
-        startedAt: deployment.startedAt ?? null,
-        finishedAt: deployment.finishedAt ?? null,
-        errorMessage: deployment.errorMessage ?? null,
-        scheduleId: deployment.scheduleId ?? null,
-        backupId: deployment.backupId ?? null,
-        rollbackId: deployment.rollbackId ?? null,
-        volumeBackupId: deployment.volumeBackupId ?? null,
-        buildServerId: deployment.buildServerId ?? null,
-      }))
-      .sort((a, b) => {
-        const statusA = a.status ?? '';
-        const statusB = b.status ?? '';
-        const isRunningA = statusA.toLowerCase() === 'running';
-        const isRunningB = statusB.toLowerCase() === 'running';
-        if (isRunningA !== isRunningB) return isRunningA ? -1 : 1;
-        const timeA = new Date(a.createdAt).getTime();
-        const timeB = new Date(b.createdAt).getTime();
-        if (!Number.isNaN(timeA) && !Number.isNaN(timeB)) {
-          return timeB - timeA;
-        }
-        return 0;
-      });
-  }, [detailData, itemType]);
+    return sortDeployments((app.deployments ?? []).map(mapDeployment));
+  }, [deploymentsRequest.data, detailData, itemType]);
 
   const logsLookup = useMemo(() => {
     if (!detailData || !itemType) {
@@ -261,18 +319,26 @@ export function useItemDetailScreen(
   }, [detailData, itemType]);
 
   const retry = useCallback(async () => {
-    if (mutate) {
-      await mutate();
-    }
-  }, [mutate]);
+    await Promise.all([mutate?.(), deploymentsRequest.mutate()]);
+  }, [deploymentsRequest, mutate]);
 
   const hasError = Boolean(error) || isErrorResponse(data);
+  const deploymentsError =
+    deployments.length > 0
+      ? null
+      : deploymentsRequest.error
+        ? deploymentsRequest.error.message
+        : deploymentsRequest.data && isErrorResponse(deploymentsRequest.data)
+          ? (deploymentsRequest.data.message ?? deploymentsRequest.data.error)
+          : null;
 
   return {
     data: detailData,
     summary,
     details,
     deployments,
+    isDeploymentsLoading: Boolean(deploymentsRequest.isLoading),
+    deploymentsError,
     logsLookupName: logsLookup.name,
     logsLookupAppType: logsLookup.appType,
     logsLookupServerId: logsLookup.serverId,

@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { useHaptics } from '@/hooks/use-haptics';
 import { THEME } from '@/lib/theme';
+import { LoginAttributionFooter } from './login-attribution-footer';
 
 type LoginFormProps = {
   serverUrl: string;
@@ -119,6 +120,7 @@ export default function LoginForm({
                 <Text>Login</Text>
               )}
             </Button>
+            <LoginAttributionFooter />
           </View>
         </View>
       </ScrollView>
