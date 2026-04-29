@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 import { useUniwind } from 'uniwind';
 
+import { useUserGet } from '@/api/user';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { useHaptics } from '@/hooks/use-haptics';
 import { useProjectsScreen } from '@/hooks/use-projects-screen';
@@ -13,6 +14,7 @@ import { ProjectsCard } from './components/projects-card';
 import { ProjectsEmptyState } from './components/projects-empty';
 import { ProjectsErrorState } from './components/projects-error';
 import { ProjectsFilters } from './components/projects-filters';
+import { ProjectsOrganizationMenu } from './components/projects-organization-menu';
 import { ProjectsSkeleton } from './components/projects-skeleton';
 
 const CARD_HEIGHT = 96;
@@ -22,6 +24,19 @@ export default function ProjectsScreen() {
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const { impact, notifyError, notifySuccess } = useHaptics();
+  const {
+    data: userGetResponse,
+    error: userGetError,
+    isLoading: isUserGetLoading,
+  } = useUserGet();
+  const screenOptions = useMemo(
+    () => ({
+      title: 'Projects',
+      headerShown: true,
+      headerLeft: () => <ProjectsOrganizationMenu />,
+    }),
+    []
+  );
   const {
     query,
     setQuery,
@@ -33,6 +48,19 @@ export default function ProjectsScreen() {
     isEmpty,
     retry,
   } = useProjectsScreen();
+
+  useEffect(() => {
+    if (isUserGetLoading) {
+      return;
+    }
+
+    if (userGetError) {
+      console.log('[user/get] error response', userGetError);
+      return;
+    }
+
+    console.log('[user/get] response', userGetResponse);
+  }, [isUserGetLoading, userGetError, userGetResponse]);
 
   const renderItem = useCallback(
     ({ item }: { item: ProjectAllResponseBody }) => <ProjectsCard project={item} />,
@@ -88,20 +116,35 @@ export default function ProjectsScreen() {
   );
 
   if (isLoading) {
-    return <ProjectsSkeleton />;
+    return (
+      <>
+        <Stack.Screen options={screenOptions} />
+        <ProjectsSkeleton />
+      </>
+    );
   }
 
   if (isError) {
-    return <ProjectsErrorState onRetry={handleRetry} />;
+    return (
+      <>
+        <Stack.Screen options={screenOptions} />
+        <ProjectsErrorState onRetry={handleRetry} />
+      </>
+    );
   }
 
   if (isEmpty) {
-    return <ProjectsEmptyState />;
+    return (
+      <>
+        <Stack.Screen options={screenOptions} />
+        <ProjectsEmptyState />
+      </>
+    );
   }
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={['left', 'top']}>
-      <Stack.Screen options={{ title: 'Projects', headerShown: true }} />
+      <Stack.Screen options={screenOptions} />
       <View className="flex-1 px-4 pt-2">
         <FlatList
           data={filteredProjects}

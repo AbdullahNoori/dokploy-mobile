@@ -3,11 +3,11 @@ import { useAuthStore } from '@/store/auth-store';
 import { Stack } from 'expo-router';
 
 export default function ModalsLayout() {
-  const hasRootAccess = useAuthStore((state) => state.hasRootAccess);
+  const hasOwnerAccess = useAuthStore((state) => state.hasOwnerAccess);
 
   return (
     <Stack screenOptions={formSheetScreenOptions}>
-      <Stack.Protected guard={hasRootAccess}>
+      <Stack.Protected guard={hasOwnerAccess}>
         <Stack.Screen
           name="notification-new"
           options={{
@@ -35,6 +35,13 @@ export default function ModalsLayout() {
         options={{
           headerTitle: 'Push Notifications',
           headerBackTitle: 'Home',
+        }}
+      />
+      <Stack.Screen
+        name="organization-new"
+        options={{
+          headerTitle: 'Add Organization',
+          headerBackTitle: 'Organizations',
         }}
       />
       <Stack.Screen

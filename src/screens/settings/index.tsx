@@ -7,9 +7,10 @@ import { Text } from '@/components/ui/text';
 import { useHaptics } from '@/hooks/use-haptics';
 import { THEME } from '@/lib/theme';
 import { useAuthStore } from '@/store/auth-store';
-import { Link, Stack } from 'expo-router';
+import { Link, Stack, useRouter } from 'expo-router';
 import {
   BellIcon,
+  Building2Icon,
   ChevronRightIcon,
   ExternalLinkIcon,
   GlobeIcon,
@@ -122,9 +123,13 @@ function SettingsSocialLink({ icon, label, url }: SettingsSocialLinkProps) {
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { theme } = useUniwind();
   const logout = useAuthStore((state) => state.logout);
-  const hasRootAccess = useAuthStore((state) => state.hasRootAccess);
+  const organizations = useAuthStore((state) => state.organizations);
+  const activeOrganization = useAuthStore((state) => state.activeOrganization);
+  const hasOwnerAccess = useAuthStore((state) => state.hasOwnerAccess);
+  const ownerAccessStatus = useAuthStore((state) => state.ownerAccessStatus);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const isDarkMode = resolvedTheme === 'dark';
@@ -135,6 +140,11 @@ export default function SettingsScreen() {
     void selection();
     Uniwind.setTheme(nextChecked ? 'dark' : 'light');
   }
+
+  const handleOpenOrganizations = useCallback(() => {
+    void selection();
+    router.push('/(app)/organizations');
+  }, [router, selection]);
 
   const handleLogout = useCallback(async () => {
     if (isLoggingOut) {
@@ -159,16 +169,20 @@ export default function SettingsScreen() {
     }
 
     void notifyWarning();
-    Alert.alert('Logout', 'Remove your saved connection and sign out of Dokploy on this device?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => {
-          void handleLogout();
+    Alert.alert(
+      'Logout',
+      'Remove all saved organizations and sign out of Dokploy on this device?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => {
+            void handleLogout();
+          },
         },
-      },
-    ]);
+      ]
+    );
   }, [handleLogout, isLoggingOut]);
 
   return (
@@ -188,8 +202,31 @@ export default function SettingsScreen() {
         contentContainerClassName="px-4 pb-8 pt-4">
         <View className="gap-6">
           <View className="gap-2">
+            <SettingsSectionLabel label="Organizations" />
+            <Pressable
+              onPress={handleOpenOrganizations}
+              accessibilityRole="button"
+              className="bg-card border-border/80 flex-row items-center justify-between rounded-lg border px-4 py-3">
+              <View className="min-w-0 flex-1 flex-row items-center gap-3 pr-4">
+                <Icon as={Building2Icon} className="size-5" />
+                <View className="min-w-0 flex-1">
+                  <Text className="font-semibold">
+                    {organizations.length} saved organization{organizations.length === 1 ? '' : 's'}
+                  </Text>
+                  {activeOrganization ? (
+                    <Text variant="muted" className="mt-0.5" numberOfLines={1}>
+                      Active: {activeOrganization.name}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+              <Icon as={ChevronRightIcon} className="text-muted-foreground size-5" />
+            </Pressable>
+          </View>
+
+          <View className="gap-2">
             <SettingsSectionLabel label="Operations" />
-            {hasRootAccess ? (
+            {hasOwnerAccess ? (
               <SettingsLinkRow href="/(app)/web-servers" icon={GlobeIcon} label="Web Servers" />
             ) : null}
             <SettingsLinkRow href="/(app)/requests" icon={ShieldIcon} label="Requests" />
@@ -208,7 +245,7 @@ export default function SettingsScreen() {
               </View>
               <Switch checked={isDarkMode} onCheckedChange={handleThemeChange} />
             </Pressable>
-            {hasRootAccess ? (
+            {hasOwnerAccess ? (
               <SettingsLinkRow href="/(app)/notifications" icon={BellIcon} label="Notifications" />
             ) : null}
           </View>
