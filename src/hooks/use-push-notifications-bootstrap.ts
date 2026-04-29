@@ -15,10 +15,10 @@ import { useAuthStore } from '@/store/auth-store';
 
 export function usePushNotificationsBootstrap() {
   const router = useRouter();
-  const hasRootAccess = useAuthStore((state) => state.hasRootAccess);
+  const hasOwnerAccess = useAuthStore((state) => state.hasOwnerAccess);
 
   useEffect(() => {
-    if (!hasRootAccess) {
+    if (!hasOwnerAccess) {
       clearStoredPushNotificationState();
       return;
     }
@@ -50,5 +50,5 @@ export function usePushNotificationsBootstrap() {
       unsubscribeTokenRefresh();
       clearStoredPushNotificationState();
     };
-  }, [hasRootAccess, router]);
+  }, [hasOwnerAccess, router]);
 }

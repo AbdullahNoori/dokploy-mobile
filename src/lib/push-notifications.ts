@@ -1,5 +1,11 @@
 import type { EventSubscription } from 'expo-modules-core';
-import messaging from '@react-native-firebase/messaging';
+import {
+  AuthorizationStatus,
+  getMessaging,
+  getToken,
+  onTokenRefresh,
+  requestPermission,
+} from '@react-native-firebase/messaging';
 import * as Notifications from 'expo-notifications';
 import { PermissionsAndroid, Platform } from 'react-native';
 
@@ -18,6 +24,7 @@ const DEFAULT_ANDROID_CHANNEL_ID = 'default';
 let notificationResponseSubscription: EventSubscription | null = null;
 let tokenRefreshUnsubscribe: (() => void) | null = null;
 let lastHandledNotificationResponseKey: string | null = null;
+const firebaseMessaging = getMessaging();
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -69,14 +76,11 @@ async function ensureAndroidNotificationChannelAsync(): Promise<void> {
 }
 
 function normalizeMessagingPermissionStatus(status: number): PushPermissionStatus {
-  if (
-    status === messaging.AuthorizationStatus.AUTHORIZED ||
-    status === messaging.AuthorizationStatus.PROVISIONAL
-  ) {
+  if (status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL) {
     return 'granted';
   }
 
-  if (status === messaging.AuthorizationStatus.DENIED) {
+  if (status === AuthorizationStatus.DENIED) {
     return 'denied';
   }
 
@@ -85,7 +89,7 @@ function normalizeMessagingPermissionStatus(status: number): PushPermissionStatu
 
 async function requestPushPermissionAsync(): Promise<PushPermissionStatus> {
   if (Platform.OS === 'ios') {
-    const status = await messaging().requestPermission();
+    const status = await requestPermission(firebaseMessaging);
     return normalizeMessagingPermissionStatus(status);
   }
 
@@ -119,8 +123,7 @@ async function requestPushPermissionAsync(): Promise<PushPermissionStatus> {
 }
 
 async function getFcmTokenAsync(): Promise<string> {
-  await messaging().registerDeviceForRemoteMessages();
-  return messaging().getToken();
+  return getToken(firebaseMessaging);
 }
 
 function createPushTokenRecord(
@@ -228,7 +231,7 @@ export function subscribeToPushTokenRefresh(): () => void {
   const nativePlatform = Platform.OS;
 
   tokenRefreshUnsubscribe?.();
-  tokenRefreshUnsubscribe = messaging().onTokenRefresh((token) => {
+  tokenRefreshUnsubscribe = onTokenRefresh(firebaseMessaging, (token) => {
     const record = createPushTokenRecord(token, nativePlatform, 'granted');
     storePushTokenRecord(record);
     setStoredPushPermissionStatus('granted');
