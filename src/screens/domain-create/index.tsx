@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Text } from '@/components/ui/text';
 import { useHaptics } from '@/hooks/use-haptics';
 import { HttpError } from '@/lib/http-error';
+import { getRequiredActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import { isErrorResponse } from '@/lib/utils';
 
 const resolveErrorMessage = (error: unknown, fallback: string) => {
@@ -199,12 +200,14 @@ export default function DomainCreateScreen() {
       }
 
       if (applicationId) {
-        await mutate(['application/one', applicationId]);
-        await mutate(['domain/byApplicationId', applicationId]);
+        await mutate(getRequiredActiveOrganizationSWRKey(['application/one', applicationId]));
+        await mutate(
+          getRequiredActiveOrganizationSWRKey(['domain/byApplicationId', applicationId])
+        );
       }
       if (composeId) {
-        await mutate(['compose/one', composeId]);
-        await mutate(['domain/byComposeId', composeId]);
+        await mutate(getRequiredActiveOrganizationSWRKey(['compose/one', composeId]));
+        await mutate(getRequiredActiveOrganizationSWRKey(['domain/byComposeId', composeId]));
       }
       router.back();
     } catch (error) {
