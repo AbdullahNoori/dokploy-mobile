@@ -1,8 +1,8 @@
 import useSWR from 'swr';
-import useSWRMutation from 'swr/mutation';
 
+import { getRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import { ProjectAllResponse, ProjectOneResponse } from '@/types/projects';
-import { getRequest } from '../lib/http';
 
 /* 
 / --------------------------------------------------------------------
@@ -11,12 +11,13 @@ import { getRequest } from '../lib/http';
 */
 
 export function useProjectAll() {
-  return useSWR<ProjectAllResponse>('project/all', getRequest);
+  const key = useActiveOrganizationSWRKey(['project/all']);
+
+  return useSWR<ProjectAllResponse>(key, () => getRequest('project/all'));
 }
 
 export function useProjectOne(projectId: string) {
-  return useSWR<ProjectOneResponse>(
-    projectId ? ['project/one', projectId] : null,
-    ([endpoint, id]) => getRequest(endpoint, { projectId: id })
-  );
+  const key = useActiveOrganizationSWRKey(projectId ? ['project/one', projectId] : null);
+
+  return useSWR<ProjectOneResponse>(key, () => getRequest('project/one', { projectId }));
 }

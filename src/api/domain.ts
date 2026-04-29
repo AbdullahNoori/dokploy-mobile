@@ -1,6 +1,7 @@
 import useSWR from 'swr';
 
 import { getRequest, postRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import type {
   DomainByApplicationIdRequest,
   DomainByComposeIdRequest,
@@ -19,22 +20,26 @@ export function useDomainsByApplicationId(
   applicationId: string | undefined,
   enabled: boolean = true
 ) {
-  return useSWR<DomainListResponse>(
-    enabled && applicationId ? ['domain/byApplicationId', applicationId] : null,
-    () =>
-      getRequest('domain/byApplicationId', {
-        applicationId: applicationId!,
-      } satisfies DomainByApplicationIdRequest)
+  const key = useActiveOrganizationSWRKey(
+    enabled && applicationId ? ['domain/byApplicationId', applicationId] : null
+  );
+
+  return useSWR<DomainListResponse>(key, () =>
+    getRequest('domain/byApplicationId', {
+      applicationId: applicationId!,
+    } satisfies DomainByApplicationIdRequest)
   );
 }
 
 export function useDomainsByComposeId(composeId: string | undefined, enabled: boolean = true) {
-  return useSWR<DomainListResponse>(
-    enabled && composeId ? ['domain/byComposeId', composeId] : null,
-    () =>
-      getRequest('domain/byComposeId', {
-        composeId: composeId!,
-      } satisfies DomainByComposeIdRequest)
+  const key = useActiveOrganizationSWRKey(
+    enabled && composeId ? ['domain/byComposeId', composeId] : null
+  );
+
+  return useSWR<DomainListResponse>(key, () =>
+    getRequest('domain/byComposeId', {
+      composeId: composeId!,
+    } satisfies DomainByComposeIdRequest)
   );
 }
 

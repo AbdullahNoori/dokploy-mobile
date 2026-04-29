@@ -1,5 +1,7 @@
 import useSWR from 'swr';
 
+import { getRequest, postRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import type { MysqlOneResponse } from '@/types/mysql';
 import type {
   MysqlSaveEnvironmentRequest,
@@ -11,12 +13,11 @@ import type {
   ServiceReloadResponse,
   ServiceStopResponse,
 } from '@/types/application-actions';
-import { getRequest, postRequest } from '@/lib/http';
 
 export function useMysqlOne(mysqlId: string | undefined) {
-  return useSWR<MysqlOneResponse>(mysqlId ? ['mysql/one', mysqlId] : null, () =>
-    getRequest('mysql/one', { mysqlId })
-  );
+  const key = useActiveOrganizationSWRKey(mysqlId ? ['mysql/one', mysqlId] : null);
+
+  return useSWR<MysqlOneResponse>(key, () => getRequest('mysql/one', { mysqlId }));
 }
 
 export function mysqlSaveEnvironment(payload: MysqlSaveEnvironmentRequest) {

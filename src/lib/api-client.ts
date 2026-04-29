@@ -24,7 +24,7 @@ api.interceptors.request.use((config) => {
       : new AxiosHeaders(config.headers ?? {});
 
   const pat = getPat();
-  if (pat) {
+  if (pat && !headers.has('x-api-key')) {
     headers.set('x-api-key', pat);
   }
 

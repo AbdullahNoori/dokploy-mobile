@@ -1,5 +1,7 @@
 import useSWR from 'swr';
 
+import { getRequest, postRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import type { MariadbOneResponse } from '@/types/mariadb';
 import type {
   MariadbSaveEnvironmentRequest,
@@ -11,12 +13,11 @@ import type {
   ServiceReloadResponse,
   ServiceStopResponse,
 } from '@/types/application-actions';
-import { getRequest, postRequest } from '@/lib/http';
 
 export function useMariadbOne(mariadbId: string | undefined) {
-  return useSWR<MariadbOneResponse>(mariadbId ? ['mariadb/one', mariadbId] : null, () =>
-    getRequest('mariadb/one', { mariadbId })
-  );
+  const key = useActiveOrganizationSWRKey(mariadbId ? ['mariadb/one', mariadbId] : null);
+
+  return useSWR<MariadbOneResponse>(key, () => getRequest('mariadb/one', { mariadbId }));
 }
 
 export function mariadbSaveEnvironment(payload: MariadbSaveEnvironmentRequest) {

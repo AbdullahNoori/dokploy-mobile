@@ -1,14 +1,17 @@
 import useSWR from 'swr';
 
+import { getRequest, postRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import type {
   NotificationAllResponse,
   NotificationCreateCustomRequest,
   NotificationCreateCustomResponse,
 } from '@/types/notifications';
-import { getRequest, postRequest } from '../lib/http';
 
 export function useNotificationAll() {
-  return useSWR<NotificationAllResponse>('notification/all', getRequest);
+  const key = useActiveOrganizationSWRKey(['notification/all']);
+
+  return useSWR<NotificationAllResponse>(key, () => getRequest('notification/all'));
 }
 
 export function notificationCreateCustom(payload: NotificationCreateCustomRequest) {

@@ -7,6 +7,7 @@ import { notificationCreateCustom } from '@/api/notifications';
 import { useHaptics } from '@/hooks/use-haptics';
 import { getStoredPushTokenRecord } from '@/lib/push-notification-storage';
 import { HttpError } from '@/lib/http-error';
+import { getRequiredActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import { isErrorResponse } from '@/lib/utils';
 
 import { useNotificationsScreen } from './use-notifications-screen';
@@ -116,7 +117,7 @@ export function useNotificationCreateScreen() {
 
       await notifySuccess();
       toast.success('Notification created.');
-      await mutate('notification/all');
+      await mutate(getRequiredActiveOrganizationSWRKey(['notification/all']));
       router.back();
     } catch (error) {
       const message = resolveErrorMessage(error, 'Unable to create notification.');

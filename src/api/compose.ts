@@ -1,13 +1,14 @@
 import useSWR from 'swr';
 
+import { getRequest, postRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import type { ComposeOneResponse } from '@/types/compose';
 import type { ServiceDeployResponse, ServiceStopResponse } from '@/types/application-actions';
-import { getRequest, postRequest } from '@/lib/http';
 
 export function useComposeOne(composeId: string | undefined) {
-  return useSWR<ComposeOneResponse>(composeId ? ['compose/one', composeId] : null, () =>
-    getRequest('compose/one', { composeId })
-  );
+  const key = useActiveOrganizationSWRKey(composeId ? ['compose/one', composeId] : null);
+
+  return useSWR<ComposeOneResponse>(key, () => getRequest('compose/one', { composeId }));
 }
 
 export function composeRedeploy(payload: {

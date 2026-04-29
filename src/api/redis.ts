@@ -1,5 +1,7 @@
 import useSWR from 'swr';
 
+import { getRequest, postRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import type { RedisOneResponse } from '@/types/redis';
 import type {
   RedisSaveEnvironmentRequest,
@@ -11,12 +13,11 @@ import type {
   ServiceReloadResponse,
   ServiceStopResponse,
 } from '@/types/application-actions';
-import { getRequest, postRequest } from '@/lib/http';
 
 export function useRedisOne(redisId: string | undefined) {
-  return useSWR<RedisOneResponse>(redisId ? ['redis/one', redisId] : null, () =>
-    getRequest('redis/one', { redisId })
-  );
+  const key = useActiveOrganizationSWRKey(redisId ? ['redis/one', redisId] : null);
+
+  return useSWR<RedisOneResponse>(key, () => getRequest('redis/one', { redisId }));
 }
 
 export function redisSaveEnvironment(payload: RedisSaveEnvironmentRequest) {

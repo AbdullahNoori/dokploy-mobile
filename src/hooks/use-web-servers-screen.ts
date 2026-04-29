@@ -12,6 +12,7 @@ import {
 } from '@/api/web-servers';
 import { useHaptics } from '@/hooks/use-haptics';
 import { HttpError } from '@/lib/http-error';
+import { useAuthStore } from '@/store/auth-store';
 import type {
   WebServerBackup,
   WebServerBackupUpdateRequest,
@@ -100,9 +101,11 @@ function getPrimaryBackup(backups: WebServerBackup[]) {
 }
 
 export function useWebServersScreen() {
+  const activeOrganizationId = useAuthStore((state) => state.activeOrganizationId);
   const { impact, notifyError, notifySuccess } = useHaptics();
   const settingsRequestIdRef = useRef(0);
   const backupsRequestIdRef = useRef(0);
+  const previousOrganizationIdRef = useRef(activeOrganizationId);
 
   const [settingsStatus, setSettingsStatus] = useState<SectionStatus>('loading');
   const [settingsError, setSettingsError] = useState<ErrorState | null>(null);
@@ -187,9 +190,20 @@ export function useWebServersScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void loadSettings(settingsRequestIdRef.current === 0);
-      void loadBackups(backupsRequestIdRef.current === 0);
-    }, [loadBackups, loadSettings])
+      const didOrganizationChange = previousOrganizationIdRef.current !== activeOrganizationId;
+      previousOrganizationIdRef.current = activeOrganizationId;
+
+      if (didOrganizationChange) {
+        settingsRequestIdRef.current += 1;
+        backupsRequestIdRef.current += 1;
+        setBackups([]);
+        setSettingsError(null);
+        setBackupsError(null);
+      }
+
+      void loadSettings(didOrganizationChange || settingsRequestIdRef.current === 0);
+      void loadBackups(didOrganizationChange || backupsRequestIdRef.current === 0);
+    }, [activeOrganizationId, loadBackups, loadSettings])
   );
 
   const setHost = useCallback((host: string) => {

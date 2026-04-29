@@ -1,5 +1,7 @@
 import useSWR from 'swr';
 
+import { getRequest, postRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import type { PostgresOneResponse } from '@/types/postgres';
 import type {
   PostgresSaveEnvironmentRequest,
@@ -11,12 +13,11 @@ import type {
   ServiceReloadResponse,
   ServiceStopResponse,
 } from '@/types/application-actions';
-import { getRequest, postRequest } from '@/lib/http';
 
 export function usePostgresOne(postgresId: string | undefined) {
-  return useSWR<PostgresOneResponse>(postgresId ? ['postgres/one', postgresId] : null, () =>
-    getRequest('postgres/one', { postgresId })
-  );
+  const key = useActiveOrganizationSWRKey(postgresId ? ['postgres/one', postgresId] : null);
+
+  return useSWR<PostgresOneResponse>(key, () => getRequest('postgres/one', { postgresId }));
 }
 
 export function postgresSaveEnvironment(payload: PostgresSaveEnvironmentRequest) {

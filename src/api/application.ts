@@ -14,11 +14,15 @@ import type {
   ApplicationSaveEnvironmentResponse,
 } from '@/types/environment-actions';
 import { getRequest, postRequest } from '@/lib/http';
+import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 
 export function useApplicationOne(applicationId: string | undefined) {
-  return useSWR<ApplicationOneResponse>(
-    applicationId ? ['application/one', applicationId] : null,
-    () => getRequest('application/one', { applicationId })
+  const key = useActiveOrganizationSWRKey(
+    applicationId ? ['application/one', applicationId] : null
+  );
+
+  return useSWR<ApplicationOneResponse>(key, () =>
+    getRequest('application/one', { applicationId })
   );
 }
 

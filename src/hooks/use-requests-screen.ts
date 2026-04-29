@@ -9,6 +9,7 @@ import {
   type RequestsDatePreset,
   getRequestsDateRange,
 } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth-store';
 import type { SettingsRequestLogEntry, SettingsRequestStatusFamily } from '@/types/settings';
 import { toast } from 'sonner-native';
 import { useDebouncedValue } from './use-debounced-value';
@@ -62,6 +63,7 @@ type UseRequestsScreenResult = {
 };
 
 export function useRequestsScreen(): UseRequestsScreenResult {
+  const activeOrganizationId = useAuthStore((state) => state.activeOrganizationId);
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 300);
   const [filters, setFilters] = useState<RequestsFilters>({
@@ -77,6 +79,7 @@ export function useRequestsScreen(): UseRequestsScreenResult {
   const [error, setError] = useState<string | null>(null);
   const activeRequestIdRef = useRef(0);
   const hasLoadedOnceRef = useRef(false);
+  const previousOrganizationIdRef = useRef(activeOrganizationId);
 
   const loadPage = useCallback(
     async (nextPageIndex: number, options: LoadPageOptions) => {
@@ -142,12 +145,27 @@ export function useRequestsScreen(): UseRequestsScreenResult {
         setIsRefreshing(false);
       }
     },
-    [debouncedQuery, filters.datePreset, filters.statuses]
+    [activeOrganizationId, debouncedQuery, filters.datePreset, filters.statuses]
   );
 
   useEffect(() => {
+    const didOrganizationChange = previousOrganizationIdRef.current !== activeOrganizationId;
+    previousOrganizationIdRef.current = activeOrganizationId;
+
+    if (didOrganizationChange) {
+      activeRequestIdRef.current += 1;
+      hasLoadedOnceRef.current = false;
+      setItems([]);
+      setTotalCount(0);
+      setPageIndex(0);
+      setError(null);
+      setIsLoadingMore(false);
+      setIsRefreshing(false);
+      setIsLoadingInitial(true);
+    }
+
     void loadPage(0, { append: false });
-  }, [loadPage]);
+  }, [activeOrganizationId, loadPage]);
 
   useFocusEffect(
     useCallback(() => {
