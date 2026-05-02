@@ -55,11 +55,11 @@ export default function ProjectsScreen() {
     }
 
     if (userGetError) {
-      console.log('[user/get] error response', userGetError);
+      // console.log('[user/get] error response', userGetError);
       return;
     }
 
-    console.log('[user/get] response', userGetResponse);
+    // console.log('[user/get] response', userGetResponse);
   }, [isUserGetLoading, userGetError, userGetResponse]);
 
   const renderItem = useCallback(
