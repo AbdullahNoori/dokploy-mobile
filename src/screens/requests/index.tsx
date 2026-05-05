@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { Stack, useRouter } from 'expo-router';
@@ -92,7 +92,11 @@ export default function RequestsScreen() {
         options={{
           title: 'Requests',
           headerShown: true,
-          headerTransparent: true,
+          headerTransparent: Platform.OS === 'ios',
+          headerStyle: Platform.select({
+            ios: { backgroundColor: 'transparent' },
+            default: undefined,
+          }),
           headerBackButtonDisplayMode: 'minimal',
         }}
       />

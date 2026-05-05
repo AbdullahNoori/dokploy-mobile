@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { FlatList, Platform, RefreshControl, View } from 'react-native';
 import { useUniwind } from 'uniwind';
 
 import { useUserGet } from '@/api/user';
@@ -18,17 +18,17 @@ import { ProjectsOrganizationMenu } from './components/projects-organization-men
 import { ProjectsSkeleton } from './components/projects-skeleton';
 
 const CARD_HEIGHT = 96;
+const SCREEN_EDGES = Platform.select({
+  android: ['left'] as const,
+  default: ['left', 'top'] as const,
+});
 
 export default function ProjectsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const { impact, notifyError, notifySuccess } = useHaptics();
-  const {
-    data: userGetResponse,
-    error: userGetError,
-    isLoading: isUserGetLoading,
-  } = useUserGet();
+  const { data: userGetResponse, error: userGetError, isLoading: isUserGetLoading } = useUserGet();
   const screenOptions = useMemo(
     () => ({
       title: 'Projects',
@@ -143,7 +143,7 @@ export default function ProjectsScreen() {
   }
 
   return (
-    <SafeAreaView className="bg-background flex-1" edges={['left', 'top']}>
+    <SafeAreaView className="bg-background flex-1" edges={SCREEN_EDGES}>
       <Stack.Screen options={screenOptions} />
       <View className="flex-1 px-4 pt-2">
         <FlatList

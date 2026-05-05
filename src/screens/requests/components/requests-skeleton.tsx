@@ -1,4 +1,4 @@
-import { ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { Stack } from 'expo-router';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
@@ -7,7 +7,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function RequestsSkeleton() {
   return (
     <SafeAreaView className="bg-background flex-1" edges={['left', 'right']}>
-      <Stack.Screen options={{ title: 'Requests', headerShown: true, headerTransparent: true }} />
+      <Stack.Screen
+        options={{
+          title: 'Requests',
+          headerShown: true,
+          headerTransparent: Platform.OS === 'ios',
+          headerStyle: Platform.select({
+            ios: { backgroundColor: 'transparent' },
+            default: undefined,
+          }),
+        }}
+      />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerClassName="gap-4 px-4 py-4"

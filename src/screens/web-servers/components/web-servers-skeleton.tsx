@@ -1,4 +1,4 @@
-import { ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { Stack } from 'expo-router';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
@@ -11,7 +11,11 @@ export function WebServersSkeleton() {
         options={{
           title: 'Web Servers',
           headerShown: true,
-          headerTransparent: true,
+          headerTransparent: Platform.OS === 'ios',
+          headerStyle: Platform.select({
+            ios: { backgroundColor: 'transparent' },
+            default: undefined,
+          }),
           headerBackButtonDisplayMode: 'minimal',
         }}
       />

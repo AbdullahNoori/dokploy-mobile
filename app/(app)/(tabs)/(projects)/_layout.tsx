@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { Platform } from 'react-native';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -9,9 +10,12 @@ export default function ProjectsLayout() {
     <Stack
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
-        headerTransparent: true,
+        headerTransparent: Platform.OS === 'ios',
         headerShadowVisible: true,
-        headerStyle: { backgroundColor: 'transparent' },
+        headerStyle: Platform.select({
+          ios: { backgroundColor: 'transparent' },
+          default: undefined,
+        }),
       }}>
       <Stack.Screen name="index" options={{ title: 'Projects' }} />
     </Stack>

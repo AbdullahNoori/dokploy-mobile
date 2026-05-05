@@ -34,24 +34,26 @@ export const REQUESTS_STATUS_OPTIONS: Array<{
   {
     label: '1xx',
     value: 'info',
-    badgeClassName: 'border border-sky-400/35 bg-sky-500/15',
-    badgeTextClassName: 'text-sky-100',
+    badgeClassName: 'border border-sky-200 bg-sky-50 dark:border-sky-400/35 dark:bg-sky-500/15',
+    badgeTextClassName: 'text-sky-700 dark:text-sky-100',
     activeChipClassName: 'border-sky-400/55 bg-sky-500/85',
     activeChipTextClassName: 'text-sky-950',
   },
   {
     label: '2xx',
     value: 'success',
-    badgeClassName: 'border border-zinc-200/70 bg-zinc-50',
-    badgeTextClassName: 'text-zinc-950',
+    badgeClassName:
+      'border border-emerald-200 bg-emerald-50 dark:border-emerald-400/35 dark:bg-emerald-500/15',
+    badgeTextClassName: 'text-emerald-700 dark:text-emerald-100',
     activeChipClassName: 'border-zinc-200/80 bg-zinc-50',
     activeChipTextClassName: 'text-zinc-950',
   },
   {
     label: '3xx',
     value: 'redirect',
-    badgeClassName: 'border border-amber-400/35 bg-amber-500/15',
-    badgeTextClassName: 'text-amber-100',
+    badgeClassName:
+      'border border-amber-200 bg-amber-50 dark:border-amber-400/35 dark:bg-amber-500/15',
+    badgeTextClassName: 'text-amber-700 dark:text-amber-100',
     activeChipClassName: 'border-amber-400/55 bg-amber-500/85',
     activeChipTextClassName: 'text-amber-950',
   },

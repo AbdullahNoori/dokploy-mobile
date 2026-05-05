@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert, Platform, ScrollView } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 
 import { SafeAreaView } from '@/components/ui/safe-area-view';
@@ -97,7 +97,11 @@ export default function WebServersScreen() {
         options={{
           title: 'Web Servers',
           headerShown: true,
-          headerTransparent: true,
+          headerTransparent: Platform.OS === 'ios',
+          headerStyle: Platform.select({
+            ios: { backgroundColor: 'transparent' },
+            default: undefined,
+          }),
           headerBackButtonDisplayMode: 'minimal',
         }}
       />

@@ -14,11 +14,11 @@ type Props = {
 
 export function ProjectsFilters({ query, onChangeQuery, sortOrder, onToggleSort }: Props) {
   return (
-    <View className="mt-4 flex-row items-center gap-2">
+    <View className="mt-0 flex-row items-center gap-2">
       <View className="bg-card border-border/70 flex-1 flex-row items-center gap-2 rounded-xl border px-3">
         <Icon as={SearchIcon} className="text-muted-foreground size-4" />
         <Input
-          className="h-11 flex-1 border-0 !bg-transparent px-0 dark:!bg-transparent"
+          className="h-11 flex-1 rounded-none border-0 bg-transparent px-0 py-0 shadow-none shadow-transparent dark:bg-transparent"
           placeholder="Filter projects..."
           value={query}
           onChangeText={onChangeQuery}

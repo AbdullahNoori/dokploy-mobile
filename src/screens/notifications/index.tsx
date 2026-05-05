@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { FlatList, Platform, RefreshControl, View } from 'react-native';
 import { useUniwind } from 'uniwind';
 
 import { useNotificationAll } from '@/api/notifications';
@@ -19,6 +19,11 @@ import { NotificationsEmptyState } from './components/notifications-empty-state'
 import { NotificationsErrorState } from './components/notifications-error-state';
 import { NotificationsListHeader } from './components/notifications-list-header';
 import { NotificationsSkeleton } from './components/notifications-skeleton';
+
+const SCREEN_EDGES = Platform.select({
+  android: ['left', 'right'] as const,
+  default: ['left', 'top', 'right'] as const,
+});
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -92,14 +97,17 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView className="bg-background flex-1" edges={['left', 'top', 'right']}>
+    <SafeAreaView className="bg-background flex-1" edges={SCREEN_EDGES}>
       <Stack.Screen
         options={{
           title: 'Notifications',
           headerShown: true,
-          headerTransparent: true,
+          headerTransparent: Platform.OS === 'ios',
           headerShadowVisible: false,
-          headerStyle: { backgroundColor: 'transparent' },
+          headerStyle: Platform.select({
+            ios: { backgroundColor: 'transparent' },
+            default: undefined,
+          }),
           headerBackButtonDisplayMode: 'minimal',
           headerRight: () => (
             <Button

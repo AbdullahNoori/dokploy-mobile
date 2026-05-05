@@ -37,6 +37,7 @@ type Props = {
 };
 
 type HighlightedInputProps = Props & {
+  highlightedContent?: string;
   onChangeText: (value: string) => void;
   onContentSizeChange: (event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) => void;
   placeholder: string;
@@ -60,6 +61,34 @@ const MONO_FONT = Platform.select({
   android: 'monospace',
   default: 'monospace',
 });
+
+const MASKED_VALUE = '********';
+
+export function maskEnvContent(content: string) {
+  if (!content.length) return content;
+
+  return content
+    .split('\n')
+    .map((line) => {
+      if (line.trim() === '') {
+        return line;
+      }
+
+      if (line.trimStart().startsWith('#')) {
+        const indentation = line.match(/^\s*/)?.[0] ?? '';
+        return `${indentation}# ${MASKED_VALUE}`;
+      }
+
+      const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)(=)(.*)$/);
+      if (!match) {
+        return MASKED_VALUE;
+      }
+
+      const [, key, equals, rawValue] = match;
+      return rawValue === '' ? `${key}${equals}` : `${key}${equals}${MASKED_VALUE}`;
+    })
+    .join('\n');
+}
 
 function tokenizeEnvLine(line: string): Token[] {
   if (line.trim() === '') {
@@ -203,6 +232,7 @@ export const EnvHighlighter = memo(function EnvHighlighter({
 export const EnvHighlightedInput = memo(function EnvHighlightedInput({
   content,
   height,
+  highlightedContent,
   onChangeText,
   onContentSizeChange,
   placeholder,
@@ -216,7 +246,7 @@ export const EnvHighlightedInput = memo(function EnvHighlightedInput({
     <View style={[styles.wrapper, { height }]}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         <EnvHighlighter
-          content={content}
+          content={highlightedContent ?? content}
           height={height}
           themeName={themeName}
           scrollOffset={scrollOffset}

@@ -15,12 +15,15 @@ import {
 } from '@/lib/utils';
 import type { SettingsRequestLogEntry } from '@/types/settings';
 
-const DEFAULT_META_CHIP_CLASS = 'rounded-full border border-zinc-700/80 bg-zinc-800 px-2.5 py-1';
-const DEFAULT_META_TEXT_CLASS = 'text-zinc-100';
-const HOST_CHIP_CLASS = 'rounded-full border border-zinc-700/70 bg-zinc-800/90 px-2.5 py-1';
-const HOST_TEXT_CLASS = 'text-zinc-50';
-const UNKNOWN_STATUS_CHIP_CLASS = 'border-zinc-700/80 bg-zinc-800';
-const UNKNOWN_STATUS_TEXT_CLASS = 'text-zinc-100';
+const DEFAULT_META_CHIP_CLASS =
+  'rounded-full border border-border/80 bg-muted px-2.5 py-1 dark:border-zinc-700/80 dark:bg-zinc-800';
+const DEFAULT_META_TEXT_CLASS = 'text-muted-foreground dark:text-zinc-100';
+const HOST_CHIP_CLASS =
+  'rounded-full border border-border/80 bg-muted px-2.5 py-1 dark:border-zinc-700/70 dark:bg-zinc-800/90';
+const HOST_TEXT_CLASS = 'text-foreground dark:text-zinc-50';
+const UNKNOWN_STATUS_CHIP_CLASS =
+  'border-border/80 bg-muted dark:border-zinc-700/80 dark:bg-zinc-800';
+const UNKNOWN_STATUS_TEXT_CLASS = 'text-muted-foreground dark:text-zinc-100';
 
 function MetaChip({
   label,
@@ -49,10 +52,10 @@ export const RequestLogCard = memo(function RequestLogCard({ request }: Props) {
   const statusOption = REQUESTS_STATUS_OPTIONS.find((option) => option.value === statusFamily);
 
   return (
-    <View className="rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 py-3">
+    <View className="bg-card border-border/80 rounded-2xl border px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/90">
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 flex-row items-center gap-2">
-          <Text className="text-sm font-bold tracking-wide text-zinc-50">
+          <Text className="text-foreground text-sm font-bold tracking-wide dark:text-zinc-50">
             {getRequestMethod(request)}
           </Text>
           <View className={`${HOST_CHIP_CLASS} max-w-[78%]`}>
@@ -61,12 +64,12 @@ export const RequestLogCard = memo(function RequestLogCard({ request }: Props) {
             </Text>
           </View>
         </View>
-        <Text className="pt-0.5 text-xs text-zinc-400">
+        <Text className="text-muted-foreground pt-0.5 text-xs dark:text-zinc-400">
           {formatCompactRelativeTime(request.StartUTC ?? request.time)}
         </Text>
       </View>
 
-      <Text className="pt-2 text-sm text-zinc-100" numberOfLines={2}>
+      <Text className="text-foreground pt-2 text-sm dark:text-zinc-100" numberOfLines={2}>
         {getRequestPath(request)}
       </Text>
 

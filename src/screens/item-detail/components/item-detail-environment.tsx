@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
+import {
+  ActivityIndicator,
+  AppState,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  View,
+} from 'react-native';
+import { EyeIcon, EyeOffIcon } from 'lucide-react-native';
 import { toast } from 'sonner-native';
 import { useUniwind } from 'uniwind';
 
@@ -10,6 +18,7 @@ import { mysqlSaveEnvironment } from '@/api/mysql';
 import { postgresSaveEnvironment } from '@/api/postgres';
 import { redisSaveEnvironment } from '@/api/redis';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useHaptics } from '@/hooks/use-haptics';
 import { HttpError } from '@/lib/http-error';
@@ -24,7 +33,7 @@ import type { PostgresOneResponseBody } from '@/types/postgres';
 import type { ProjectItemType } from '@/types/projects';
 import type { RedisOneResponseBody } from '@/types/redis';
 
-import { EnvHighlightedInput, EnvHighlighter } from './env-highlighter';
+import { EnvHighlightedInput, EnvHighlighter, maskEnvContent } from './env-highlighter';
 import { ItemDetailEmptyState } from './item-detail-empty';
 
 type EnvironmentItem =
@@ -63,6 +72,7 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
   const [lastSaved, setLastSaved] = useState('');
   const [editorHeight, setEditorHeight] = useState(180);
   const [isSaving, setIsSaving] = useState(false);
+  const [valuesVisible, setValuesVisible] = useState(false);
   const { impact, notifyError, notifySuccess, selection } = useHaptics();
 
   const envValue = useMemo(() => {
@@ -73,10 +83,24 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
   useEffect(() => {
     setDraft(envValue);
     setLastSaved(envValue);
+    setValuesVisible(false);
   }, [envValue]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'inactive' || nextAppState === 'background') {
+        setValuesVisible(false);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const maxEditorHeight = 320;
   const editorContainerHeight = editorHeight + 16;
+  const displayContent = valuesVisible ? draft : maskEnvContent(draft);
 
   const isCompose = itemType === 'compose';
   const isDirty = draft !== lastSaved;
@@ -107,6 +131,11 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
     void selection();
     setDraft(lastSaved);
   }, [lastSaved, selection]);
+
+  const handleToggleVisibility = useCallback(() => {
+    void selection();
+    setValuesVisible((current) => !current);
+  }, [selection]);
 
   const handleSave = useCallback(async () => {
     if (!canSave || !isDirty || isSaving) return;
@@ -169,6 +198,7 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
       await notifySuccess();
       toast.success('Environment saved.');
       setLastSaved(draft);
+      setValuesVisible(false);
       await onRefresh();
     } catch (error) {
       await notifyError();
@@ -214,29 +244,44 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
                 : 'Edit and preview environment variables for this service.'}
             </Text>
           </View>
-          <View className="bg-muted flex-row rounded-lg p-1">
-            {(['edit', 'preview'] as const).map((value) => {
-              const isActive = mode === value;
-              return (
-                <Pressable
-                  key={value}
-                  onPress={() => {
-                    if (mode !== value) {
-                      void selection();
-                    }
-                    setMode(value);
-                  }}
-                  className={cn(
-                    'rounded-md px-3 py-1.5',
-                    isActive ? 'bg-background' : 'opacity-60'
-                  )}>
-                  <Text
-                    className={cn('text-xs font-semibold', !isActive && 'text-muted-foreground')}>
-                    {value === 'edit' ? 'Edit' : 'Preview'}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <View className="flex-row items-center gap-2">
+            <View className="bg-muted flex-row rounded-lg p-1">
+              {(['edit', 'preview'] as const).map((value) => {
+                const isActive = mode === value;
+                return (
+                  <Pressable
+                    key={value}
+                    onPress={() => {
+                      if (mode !== value) {
+                        void selection();
+                      }
+                      setMode(value);
+                    }}
+                    className={cn(
+                      'rounded-md px-3 py-1.5',
+                      isActive ? 'bg-background' : 'opacity-60'
+                    )}>
+                    <Text
+                      className={cn('text-xs font-semibold', !isActive && 'text-muted-foreground')}>
+                      {value === 'edit' ? 'Edit' : 'Preview'}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Button
+              accessibilityLabel={
+                valuesVisible ? 'Hide environment values' : 'Show environment values'
+              }
+              className="bg-muted"
+              size="icon"
+              variant="secondary"
+              onPress={handleToggleVisibility}>
+              <Icon
+                as={valuesVisible ? EyeOffIcon : EyeIcon}
+                className="text-secondary-foreground size-4"
+              />
+            </Button>
           </View>
         </View>
 
@@ -247,10 +292,15 @@ export function ItemDetailEnvironment({ itemType, data, onRefresh }: Props) {
           )}
           style={{ height: editorContainerHeight }}>
           {mode === 'preview' ? (
-            <EnvHighlighter content={draft} height={editorHeight} themeName={resolvedTheme} />
+            <EnvHighlighter
+              content={displayContent}
+              height={editorHeight}
+              themeName={resolvedTheme}
+            />
           ) : (
             <EnvHighlightedInput
               content={draft}
+              highlightedContent={displayContent}
               height={editorHeight}
               themeName={resolvedTheme}
               placeholder="KEY=value"

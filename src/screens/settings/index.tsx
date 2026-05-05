@@ -1,4 +1,12 @@
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
@@ -67,6 +75,11 @@ const PERSONAL_LINKS = [
     url: 'https://abdullahnoori.vercel.app',
   },
 ] satisfies SettingsSocialLinkProps[];
+
+const SCREEN_EDGES = Platform.select({
+  android: ['left', 'right'] as const,
+  default: ['left', 'top', 'right'] as const,
+});
 
 function SettingsSectionLabel({ label }: { label: string }) {
   return (
@@ -186,14 +199,17 @@ export default function SettingsScreen() {
   }, [handleLogout, isLoggingOut]);
 
   return (
-    <SafeAreaView className="bg-background flex-1" edges={['left', 'top', 'right']}>
+    <SafeAreaView className="bg-background flex-1" edges={SCREEN_EDGES}>
       <Stack.Screen
         options={{
           title: 'Settings',
           headerShown: true,
-          headerTransparent: true,
+          headerTransparent: Platform.OS === 'ios',
           headerShadowVisible: false,
-          headerStyle: { backgroundColor: 'transparent' },
+          headerStyle: Platform.select({
+            ios: { backgroundColor: 'transparent' },
+            default: undefined,
+          }),
         }}
       />
       <ScrollView
@@ -256,7 +272,7 @@ export default function SettingsScreen() {
               <View className="min-w-0 flex-1">
                 <Text className="text-sm font-medium">Built by Abdullah Noori</Text>
                 <Text variant="muted" className="mt-0.5">
-                  Dokploy mobile app
+                  Dokploy Mobile
                 </Text>
               </View>
               <View className="flex-row items-center gap-2">

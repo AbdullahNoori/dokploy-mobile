@@ -1,11 +1,21 @@
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Platform, TextInput, type TextInputProps } from 'react-native';
+import { THEME } from '@/lib/theme';
+import { Platform, StyleSheet, TextInput, type TextInputProps } from 'react-native';
+import { useUniwind } from 'uniwind';
 
-const Input = forwardRef<TextInput, TextInputProps>(function Input({ className, ...props }, ref) {
+const Input = forwardRef<TextInput, TextInputProps>(function Input({ className, style, ...props }, ref) {
+  const { theme } = useUniwind();
+  const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+  const androidStyle =
+    Platform.OS === 'android'
+      ? [styles.androidInput, className?.includes('bg-transparent') && styles.androidTransparentInput]
+      : undefined;
+
   return (
     <TextInput
       ref={ref}
+      placeholderTextColor={THEME[resolvedTheme].mutedForeground}
       className={cn(
         'dark:bg-input/30 border-input bg-background text-foreground flex h-10 w-full min-w-0 flex-row items-center rounded-md border px-3 py-1 text-base leading-5 shadow-sm shadow-black/5 sm:h-9',
         props.editable === false &&
@@ -23,9 +33,20 @@ const Input = forwardRef<TextInput, TextInputProps>(function Input({ className, 
         }),
         className
       )}
+      style={androidStyle ? [androidStyle, style] : style}
       {...props}
+      underlineColorAndroid="transparent"
     />
   );
+});
+
+const styles = StyleSheet.create({
+  androidInput: {
+    borderBottomWidth: 0,
+  },
+  androidTransparentInput: {
+    backgroundColor: 'transparent',
+  },
 });
 
 export { Input };

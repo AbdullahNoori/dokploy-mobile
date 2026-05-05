@@ -20,10 +20,10 @@ export function RequestsSearchBar({
 }: Props) {
   return (
     <View className="flex-row items-center gap-2">
-      <View className="bg-card flex-1 flex-row items-center gap-2 rounded-xl border border-zinc-800 px-3">
+      <View className="bg-card border-border/70 flex-1 flex-row items-center gap-2 rounded-xl border px-3">
         <Icon as={SearchIcon} className="text-muted-foreground size-4" />
         <Input
-          className="h-11 flex-1 border-0 !bg-transparent px-0 dark:!bg-transparent"
+          className="h-11 flex-1 rounded-none border-0 bg-transparent px-0 py-0 shadow-none shadow-transparent dark:bg-transparent"
           placeholder="Search host or path"
           value={query}
           onChangeText={onChangeQuery}
@@ -34,7 +34,7 @@ export function RequestsSearchBar({
       </View>
       <Pressable
         onPress={onPressFilters}
-        className="bg-card h-11 flex-row items-center gap-2 rounded-xl border border-zinc-800 px-3 active:opacity-90">
+        className="bg-card border-border/70 h-11 flex-row items-center gap-2 rounded-xl border px-3 active:opacity-90">
         <Icon as={SlidersHorizontalIcon} className="text-muted-foreground size-4" />
         {/* <Text className="text-sm font-medium">Filters</Text> */}
         {activeFilterCount > 0 ? (
