@@ -10,7 +10,6 @@ import type { DeploymentRow } from '@/hooks/use-item-detail-screen';
 
 type Props = {
   deployments: DeploymentRow[];
-  itemId: string;
 };
 
 const STATUS_CLASS: Record<string, string> = {
@@ -21,7 +20,7 @@ const STATUS_CLASS: Record<string, string> = {
   idle: 'bg-slate-400',
 };
 
-export function ItemDetailDeployments({ deployments, itemId }: Props) {
+export function ItemDetailDeployments({ deployments }: Props) {
   const router = useRouter();
   const { impact } = useHaptics();
 
@@ -44,27 +43,9 @@ export function ItemDetailDeployments({ deployments, itemId }: Props) {
               router.push({
                 pathname: '/(app)/modals/deployment-detail',
                 params: {
-                  itemId,
                   deploymentId: deployment.id,
                   title: deployment.title,
-                  status: deployment.status ?? '',
-                  description: deployment.description ?? '',
                   logPath: deployment.logPath ?? '',
-                  pid: deployment.pid ?? '',
-                  applicationId: deployment.applicationId ?? '',
-                  composeId: deployment.composeId ?? '',
-                  serverId: deployment.serverId ?? '',
-                  isPreviewDeployment: String(deployment.isPreviewDeployment),
-                  previewDeploymentId: deployment.previewDeploymentId ?? '',
-                  createdAt: deployment.createdAt,
-                  startedAt: deployment.startedAt ?? '',
-                  finishedAt: deployment.finishedAt ?? '',
-                  errorMessage: deployment.errorMessage ?? '',
-                  scheduleId: deployment.scheduleId ?? '',
-                  backupId: deployment.backupId ?? '',
-                  rollbackId: deployment.rollbackId ?? '',
-                  volumeBackupId: deployment.volumeBackupId ?? '',
-                  buildServerId: deployment.buildServerId ?? '',
                 },
               });
             }}>

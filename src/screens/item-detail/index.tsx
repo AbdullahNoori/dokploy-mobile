@@ -270,7 +270,7 @@ export default function ItemDetailScreen() {
             ) : deploymentsError ? (
               <ItemDetailEmptyState title="Deployments" description={deploymentsError} />
             ) : deployments.length > 0 ? (
-              <ItemDetailDeployments deployments={deployments} itemId={itemId} />
+              <ItemDetailDeployments deployments={deployments} />
             ) : (
               <ItemDetailEmptyState
                 title="Deployments"
