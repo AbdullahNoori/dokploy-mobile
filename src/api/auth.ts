@@ -21,7 +21,7 @@ interface LoginResponse {
 }
 
 export function login(payload: LoginPayload) {
-  return postRequest<LoginResponse>('auth/login', payload);
+  return postRequest<LoginResponse>('auth.login', payload);
 }
 
 interface LogoutResponse {
@@ -29,7 +29,7 @@ interface LogoutResponse {
 }
 
 export function logout() {
-  return postRequest<LogoutResponse>('auth/logout');
+  return postRequest<LogoutResponse>('auth.logout');
 }
 
 /* 
@@ -43,15 +43,15 @@ interface ResendOTPResponse {
 }
 
 export function initializeSignup(payload: SignupPayload) {
-  return postRequest('auth/register', payload);
+  return postRequest('auth.register', payload);
 }
 
 export function verifyEmail(payload: VerifyEmail) {
-  return postRequest('auth/register/verify-otp', payload);
+  return postRequest('auth.register.verify-otp', payload);
 }
 
 export function resendOTP(email: string) {
-  return postRequest<ResendOTPResponse>('auth/register/resend-otp', { email });
+  return postRequest<ResendOTPResponse>('auth.register.resend-otp', { email });
 }
 
 /* 
@@ -61,11 +61,11 @@ export function resendOTP(email: string) {
 */
 
 export function useGetAvailable2FAMethods() {
-  return useSWR<TwoFAMethod[]>('auth/available-methods', getRequest);
+  return useSWR<TwoFAMethod[]>('auth.available-methods', getRequest);
 }
 
 export function initiate2FA(payload: Initiate2FAPayload) {
-  return postRequest('auth/login/initiate-2fa', payload);
+  return postRequest('auth.login.initiate-2fa', payload);
 }
 
 interface Verify2FAResponse {
@@ -73,5 +73,5 @@ interface Verify2FAResponse {
 }
 
 export function verify2FA(payload: Verify2FAPayload) {
-  return postRequest<Verify2FAResponse>('auth/login/verify-2fa', payload);
+  return postRequest<Verify2FAResponse>('auth.login.verify-2fa', payload);
 }

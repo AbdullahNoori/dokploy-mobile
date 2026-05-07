@@ -22,12 +22,12 @@ export function useDockerContainersByAppNameMatch({
 }: UseDockerContainersByAppNameMatchOptions) {
   const key = useActiveOrganizationSWRKey(
     enabled && appName
-      ? ['docker/getContainersByAppNameMatch', appName, appType ?? null, serverId ?? null]
+      ? ['docker.getContainersByAppNameMatch', appName, appType ?? null, serverId ?? null]
       : null
   );
 
   return useSWR<DockerContainersByAppNameMatchResponse>(key, async () => {
-    const response = await getRequest<unknown>('docker/getContainersByAppNameMatch', {
+    const response = await getRequest<unknown>('docker.getContainersByAppNameMatch', {
       appName,
       appType,
       serverId,

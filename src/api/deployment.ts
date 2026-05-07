@@ -1,25 +1,16 @@
 import useSWR from 'swr';
 
-import { HttpError } from '@/lib/http-error';
 import { getRequest } from '@/lib/http';
 import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 import type { DeploymentAllByTypeRequest, DeploymentAllByTypeResponse } from '@/types/deployment';
 
 export async function readDeploymentsByType(request: DeploymentAllByTypeRequest) {
-  try {
-    return await getRequest<DeploymentAllByTypeResponse>('deployment/allByType', request);
-  } catch (error) {
-    if (error instanceof HttpError && error.response?.status === 404) {
-      return getRequest<DeploymentAllByTypeResponse>('deployment.allByType', request);
-    }
-
-    throw error;
-  }
+  return getRequest<DeploymentAllByTypeResponse>('deployment.allByType', request);
 }
 
 export function useDeploymentsByType(request: DeploymentAllByTypeRequest | null) {
   const key = useActiveOrganizationSWRKey(
-    request ? ['deployment/allByType', request.id, request.type] : null
+    request ? ['deployment.allByType', request.id, request.type] : null
   );
 
   return useSWR<DeploymentAllByTypeResponse>(key, () => readDeploymentsByType(request!));

@@ -43,11 +43,11 @@ type VerifyApiKeyOwnerAccessPayload = {
 };
 
 export function useUserGet() {
-  return useSWR<UserGetResponse>('user/get', () => requestUserGet());
+  return useSWR<UserGetResponse>('user.get', () => requestUserGet());
 }
 
 export async function requestUserGet(config?: DokployRequestConfig): Promise<UserGetResponse> {
-  return getRequest<UserGetResponse>('user/get', undefined, config);
+  return getRequest<UserGetResponse>('user.get', undefined, config);
 }
 
 export function hasOwnerRole(user: UserGetResponse | undefined): boolean {

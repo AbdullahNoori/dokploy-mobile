@@ -6,9 +6,9 @@ import type { ComposeOneResponse } from '@/types/compose';
 import type { ServiceDeployResponse, ServiceStopResponse } from '@/types/application-actions';
 
 export function useComposeOne(composeId: string | undefined) {
-  const key = useActiveOrganizationSWRKey(composeId ? ['compose/one', composeId] : null);
+  const key = useActiveOrganizationSWRKey(composeId ? ['compose.one', composeId] : null);
 
-  return useSWR<ComposeOneResponse>(key, () => getRequest('compose/one', { composeId }));
+  return useSWR<ComposeOneResponse>(key, () => getRequest('compose.one', { composeId }));
 }
 
 export function composeRedeploy(payload: {
@@ -16,13 +16,13 @@ export function composeRedeploy(payload: {
   title?: string;
   description?: string;
 }) {
-  return postRequest<ServiceDeployResponse>('compose/redeploy', payload);
+  return postRequest<ServiceDeployResponse>('compose.redeploy', payload);
 }
 
 export function composeStart(payload: { composeId: string }) {
-  return postRequest<ServiceStopResponse>('compose/start', payload);
+  return postRequest<ServiceStopResponse>('compose.start', payload);
 }
 
 export function composeStop(payload: { composeId: string }) {
-  return postRequest<ServiceStopResponse>('compose/stop', payload);
+  return postRequest<ServiceStopResponse>('compose.stop', payload);
 }
