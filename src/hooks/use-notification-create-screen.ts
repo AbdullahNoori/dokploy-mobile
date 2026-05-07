@@ -117,7 +117,7 @@ export function useNotificationCreateScreen() {
 
       await notifySuccess();
       toast.success('Notification created.');
-      await mutate(getRequiredActiveOrganizationSWRKey(['notification/all']));
+      await mutate(getRequiredActiveOrganizationSWRKey(['notification.all']));
       router.back();
     } catch (error) {
       const message = resolveErrorMessage(error, 'Unable to create notification.');

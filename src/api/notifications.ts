@@ -9,11 +9,11 @@ import type {
 } from '@/types/notifications';
 
 export function useNotificationAll() {
-  const key = useActiveOrganizationSWRKey(['notification/all']);
+  const key = useActiveOrganizationSWRKey(['notification.all']);
 
-  return useSWR<NotificationAllResponse>(key, () => getRequest('notification/all'));
+  return useSWR<NotificationAllResponse>(key, () => getRequest('notification.all'));
 }
 
 export function notificationCreateCustom(payload: NotificationCreateCustomRequest) {
-  return postRequest<NotificationCreateCustomResponse>('notification/createCustom', payload);
+  return postRequest<NotificationCreateCustomResponse>('notification.createCustom', payload);
 }

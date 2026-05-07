@@ -15,27 +15,27 @@ import type {
 } from '@/types/application-actions';
 
 export function usePostgresOne(postgresId: string | undefined) {
-  const key = useActiveOrganizationSWRKey(postgresId ? ['postgres/one', postgresId] : null);
+  const key = useActiveOrganizationSWRKey(postgresId ? ['postgres.one', postgresId] : null);
 
-  return useSWR<PostgresOneResponse>(key, () => getRequest('postgres/one', { postgresId }));
+  return useSWR<PostgresOneResponse>(key, () => getRequest('postgres.one', { postgresId }));
 }
 
 export function postgresSaveEnvironment(payload: PostgresSaveEnvironmentRequest) {
-  return postRequest<PostgresSaveEnvironmentResponse>('postgres/saveEnvironment', payload);
+  return postRequest<PostgresSaveEnvironmentResponse>('postgres.saveEnvironment', payload);
 }
 
 export function postgresDeploy(payload: { postgresId: string }) {
-  return postRequest<ServiceDeployResponse>('postgres/deploy', payload);
+  return postRequest<ServiceDeployResponse>('postgres.deploy', payload);
 }
 
 export function postgresReload(payload: { postgresId: string; appName: string }) {
-  return postRequest<ServiceReloadResponse>('postgres/reload', payload);
+  return postRequest<ServiceReloadResponse>('postgres.reload', payload);
 }
 
 export function postgresRebuild(payload: { postgresId: string }) {
-  return postRequest<ServiceRebuildResponse>('postgres/rebuild', payload);
+  return postRequest<ServiceRebuildResponse>('postgres.rebuild', payload);
 }
 
 export function postgresStop(payload: { postgresId: string }) {
-  return postRequest<ServiceStopResponse>('postgres/stop', payload);
+  return postRequest<ServiceStopResponse>('postgres.stop', payload);
 }

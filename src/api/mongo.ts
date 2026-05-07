@@ -15,27 +15,27 @@ import type {
 } from '@/types/application-actions';
 
 export function useMongoOne(mongoId: string | undefined) {
-  const key = useActiveOrganizationSWRKey(mongoId ? ['mongo/one', mongoId] : null);
+  const key = useActiveOrganizationSWRKey(mongoId ? ['mongo.one', mongoId] : null);
 
-  return useSWR<MongoOneResponse>(key, () => getRequest('mongo/one', { mongoId }));
+  return useSWR<MongoOneResponse>(key, () => getRequest('mongo.one', { mongoId }));
 }
 
 export function mongoSaveEnvironment(payload: MongoSaveEnvironmentRequest) {
-  return postRequest<MongoSaveEnvironmentResponse>('mongo/saveEnvironment', payload);
+  return postRequest<MongoSaveEnvironmentResponse>('mongo.saveEnvironment', payload);
 }
 
 export function mongoDeploy(payload: { mongoId: string }) {
-  return postRequest<ServiceDeployResponse>('mongo/deploy', payload);
+  return postRequest<ServiceDeployResponse>('mongo.deploy', payload);
 }
 
 export function mongoReload(payload: { mongoId: string; appName: string }) {
-  return postRequest<ServiceReloadResponse>('mongo/reload', payload);
+  return postRequest<ServiceReloadResponse>('mongo.reload', payload);
 }
 
 export function mongoRebuild(payload: { mongoId: string }) {
-  return postRequest<ServiceRebuildResponse>('mongo/rebuild', payload);
+  return postRequest<ServiceRebuildResponse>('mongo.rebuild', payload);
 }
 
 export function mongoStop(payload: { mongoId: string }) {
-  return postRequest<ServiceStopResponse>('mongo/stop', payload);
+  return postRequest<ServiceStopResponse>('mongo.stop', payload);
 }

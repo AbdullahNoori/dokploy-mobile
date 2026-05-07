@@ -18,26 +18,26 @@ import { useActiveOrganizationSWRKey } from '@/lib/organization-swr-key';
 
 export function useApplicationOne(applicationId: string | undefined) {
   const key = useActiveOrganizationSWRKey(
-    applicationId ? ['application/one', applicationId] : null
+    applicationId ? ['application.one', applicationId] : null
   );
 
   return useSWR<ApplicationOneResponse>(key, () =>
-    getRequest('application/one', { applicationId })
+    getRequest('application.one', { applicationId })
   );
 }
 
 export function applicationReload(payload: ApplicationReloadRequest) {
-  return postRequest<ApplicationReloadResponse>('application/reload', payload);
+  return postRequest<ApplicationReloadResponse>('application.reload', payload);
 }
 
 export function applicationRedeploy(payload: ApplicationRedeployRequest) {
-  return postRequest<ApplicationRedeployResponse>('application/redeploy', payload);
+  return postRequest<ApplicationRedeployResponse>('application.redeploy', payload);
 }
 
 export function applicationStop(payload: ApplicationStopRequest) {
-  return postRequest<ApplicationStopResponse>('application/stop', payload);
+  return postRequest<ApplicationStopResponse>('application.stop', payload);
 }
 
 export function applicationSaveEnvironment(payload: ApplicationSaveEnvironmentRequest) {
-  return postRequest<ApplicationSaveEnvironmentResponse>('application/saveEnvironment', payload);
+  return postRequest<ApplicationSaveEnvironmentResponse>('application.saveEnvironment', payload);
 }

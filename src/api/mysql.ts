@@ -15,27 +15,27 @@ import type {
 } from '@/types/application-actions';
 
 export function useMysqlOne(mysqlId: string | undefined) {
-  const key = useActiveOrganizationSWRKey(mysqlId ? ['mysql/one', mysqlId] : null);
+  const key = useActiveOrganizationSWRKey(mysqlId ? ['mysql.one', mysqlId] : null);
 
-  return useSWR<MysqlOneResponse>(key, () => getRequest('mysql/one', { mysqlId }));
+  return useSWR<MysqlOneResponse>(key, () => getRequest('mysql.one', { mysqlId }));
 }
 
 export function mysqlSaveEnvironment(payload: MysqlSaveEnvironmentRequest) {
-  return postRequest<MysqlSaveEnvironmentResponse>('mysql/saveEnvironment', payload);
+  return postRequest<MysqlSaveEnvironmentResponse>('mysql.saveEnvironment', payload);
 }
 
 export function mysqlDeploy(payload: { mysqlId: string }) {
-  return postRequest<ServiceDeployResponse>('mysql/deploy', payload);
+  return postRequest<ServiceDeployResponse>('mysql.deploy', payload);
 }
 
 export function mysqlReload(payload: { mysqlId: string; appName: string }) {
-  return postRequest<ServiceReloadResponse>('mysql/reload', payload);
+  return postRequest<ServiceReloadResponse>('mysql.reload', payload);
 }
 
 export function mysqlRebuild(payload: { mysqlId: string }) {
-  return postRequest<ServiceRebuildResponse>('mysql/rebuild', payload);
+  return postRequest<ServiceRebuildResponse>('mysql.rebuild', payload);
 }
 
 export function mysqlStop(payload: { mysqlId: string }) {
-  return postRequest<ServiceStopResponse>('mysql/stop', payload);
+  return postRequest<ServiceStopResponse>('mysql.stop', payload);
 }

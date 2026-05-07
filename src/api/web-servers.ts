@@ -108,7 +108,7 @@ function normalizeWebServerSettings(payload: unknown): WebServerSettings {
   }
 
   const source = isRecord(unwrapped)
-    ? getNestedRecord(unwrapped, 'settings') ?? getNestedRecord(unwrapped, 'data') ?? unwrapped
+    ? (getNestedRecord(unwrapped, 'settings') ?? getNestedRecord(unwrapped, 'data') ?? unwrapped)
     : null;
 
   if (!source) {
@@ -208,31 +208,31 @@ function resolveActionResult(payload: unknown) {
 }
 
 export async function readWebServerSettings() {
-  const payload = await getRequest<unknown>('settings/getWebServerSettings');
+  const payload = await getRequest<unknown>('settings.getWebServerSettings');
   return normalizeWebServerSettings(payload);
 }
 
 export async function readWebServerBackups() {
-  const payload = await getRequest<unknown>('user/getBackups');
+  const payload = await getRequest<unknown>('user.getBackups');
   return getCollection(payload).map(normalizeWebServerBackup).filter(Boolean) as WebServerBackup[];
 }
 
 export async function saveWebServerSettings(payload: WebServerSettingsSaveRequest) {
-  const response = await postRequest<unknown>('settings/assignDomainServer', payload);
+  const response = await postRequest<unknown>('settings.assignDomainServer', payload);
   return resolveActionResult(response);
 }
 
 export async function runWebServerBackup(payload: WebServerBackupRunRequest) {
-  const response = await postRequest<unknown>('backup/manualBackupWebServer', payload);
+  const response = await postRequest<unknown>('backup.manualBackupWebServer', payload);
   return resolveActionResult(response);
 }
 
 export async function updateWebServerBackup(payload: WebServerBackupUpdateRequest) {
-  const response = await postRequest<unknown>('backup/update', payload);
+  const response = await postRequest<unknown>('backup.update', payload);
   return resolveActionResult(response);
 }
 
 export async function deleteWebServerBackup(payload: WebServerBackupDeleteRequest) {
-  const response = await postRequest<unknown>('backup/remove', payload);
+  const response = await postRequest<unknown>('backup.remove', payload);
   return resolveActionResult(response);
 }

@@ -200,14 +200,14 @@ export default function DomainCreateScreen() {
       }
 
       if (applicationId) {
-        await mutate(getRequiredActiveOrganizationSWRKey(['application/one', applicationId]));
+        await mutate(getRequiredActiveOrganizationSWRKey(['application.one', applicationId]));
         await mutate(
-          getRequiredActiveOrganizationSWRKey(['domain/byApplicationId', applicationId])
+          getRequiredActiveOrganizationSWRKey(['domain.byApplicationId', applicationId])
         );
       }
       if (composeId) {
-        await mutate(getRequiredActiveOrganizationSWRKey(['compose/one', composeId]));
-        await mutate(getRequiredActiveOrganizationSWRKey(['domain/byComposeId', composeId]));
+        await mutate(getRequiredActiveOrganizationSWRKey(['compose.one', composeId]));
+        await mutate(getRequiredActiveOrganizationSWRKey(['domain.byComposeId', composeId]));
       }
       router.back();
     } catch (error) {

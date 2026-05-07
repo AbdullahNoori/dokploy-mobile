@@ -21,11 +21,11 @@ export function useDomainsByApplicationId(
   enabled: boolean = true
 ) {
   const key = useActiveOrganizationSWRKey(
-    enabled && applicationId ? ['domain/byApplicationId', applicationId] : null
+    enabled && applicationId ? ['domain.byApplicationId', applicationId] : null
   );
 
   return useSWR<DomainListResponse>(key, () =>
-    getRequest('domain/byApplicationId', {
+    getRequest('domain.byApplicationId', {
       applicationId: applicationId!,
     } satisfies DomainByApplicationIdRequest)
   );
@@ -33,28 +33,28 @@ export function useDomainsByApplicationId(
 
 export function useDomainsByComposeId(composeId: string | undefined, enabled: boolean = true) {
   const key = useActiveOrganizationSWRKey(
-    enabled && composeId ? ['domain/byComposeId', composeId] : null
+    enabled && composeId ? ['domain.byComposeId', composeId] : null
   );
 
   return useSWR<DomainListResponse>(key, () =>
-    getRequest('domain/byComposeId', {
+    getRequest('domain.byComposeId', {
       composeId: composeId!,
     } satisfies DomainByComposeIdRequest)
   );
 }
 
 export function domainCreate(payload: DomainCreateRequest) {
-  return postRequest<DomainCreateResponse>('domain/create', payload);
+  return postRequest<DomainCreateResponse>('domain.create', payload);
 }
 
 export function domainUpdate(payload: DomainUpdateRequest) {
-  return postRequest<DomainUpdateResponse>('domain/update', payload);
+  return postRequest<DomainUpdateResponse>('domain.update', payload);
 }
 
 export function domainDelete(payload: DomainDeleteRequest) {
-  return postRequest<DomainDeleteResponse>('domain/delete', payload);
+  return postRequest<DomainDeleteResponse>('domain.delete', payload);
 }
 
 export function domainValidate(payload: DomainValidateRequest) {
-  return postRequest<DomainValidateResponse>('domain/validateDomain', payload);
+  return postRequest<DomainValidateResponse>('domain.validateDomain', payload);
 }
