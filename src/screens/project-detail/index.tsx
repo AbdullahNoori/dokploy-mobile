@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { FlatList, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
@@ -8,6 +8,7 @@ import { useProjectDetailScreen } from '@/hooks/use-project-detail-screen';
 import type { ProjectItem } from '@/types/projects';
 
 import { ApplicationsCard } from './components/applications-card';
+import { ProjectEnvironmentMenu } from './components/project-environment-menu';
 import { ProjectDetailEmptyState } from './components/project-detail-empty';
 import { ProjectDetailErrorState } from './components/project-detail-error';
 import { ProjectDetailSkeleton } from './components/project-detail-skeleton';
@@ -19,9 +20,26 @@ export default function ProjectDetailScreen() {
     projectId: string;
     projectName?: string;
   }>();
-  const { project, items, isLoading, isError, retry } = useProjectDetailScreen(projectId ?? '');
+  const {
+    project,
+    environments,
+    activeEnvironment,
+    activeEnvironmentId,
+    items,
+    isLoading,
+    isError,
+    selectEnvironment,
+    retry,
+  } = useProjectDetailScreen(projectId ?? '');
   const { impact, notifyError, notifySuccess } = useHaptics();
   const title = project?.name ?? projectName ?? 'Project';
+  const screenOptions = useMemo(
+    () => ({
+      title,
+      headerBackButtonDisplayMode: 'minimal' as const,
+    }),
+    [title]
+  );
 
   const handleRetry = useCallback(async () => {
     await impact();
@@ -58,7 +76,8 @@ export default function ProjectDetailScreen() {
   if (isError) {
     return (
       <>
-        <Stack.Screen options={{ title, headerBackButtonDisplayMode: 'minimal' }} />
+        <Stack.Screen options={screenOptions} />
+        {environmentMenu}
         <ProjectDetailErrorState
           onRetry={() => {
             void handleRetry();
@@ -71,16 +90,21 @@ export default function ProjectDetailScreen() {
   if (!items.length) {
     return (
       <>
-        <Stack.Screen options={{ title, headerBackButtonDisplayMode: 'minimal' }} />
-        <ProjectDetailEmptyState />
+        <Stack.Screen options={screenOptions} />
+        {environmentMenu}
+        <ProjectDetailEmptyState environmentName={activeEnvironment?.name} />
       </>
     );
   }
 
   return (
     <SafeAreaView className="bg-background flex-1 px-4">
-      <Stack.Screen
-        options={{ title, headerBackButtonDisplayMode: 'minimal' }}
+      <Stack.Screen options={screenOptions} />
+      <ProjectEnvironmentMenu
+        environments={environments}
+        activeEnvironmentId={activeEnvironmentId}
+        activeEnvironmentName={activeEnvironment?.name}
+        onSelectEnvironment={selectEnvironment}
       />
       <View className="flex-1 pt-2">
         <FlatList

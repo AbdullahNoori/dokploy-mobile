@@ -25,6 +25,8 @@ const SCREEN_EDGES = Platform.select({
 
 export default function ProjectsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [switchingOrganizationId, setSwitchingOrganizationId] = useState<string | null>(null);
+  const isSwitchingOrganization = switchingOrganizationId !== null;
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const { impact, notifyError, notifySuccess } = useHaptics();
@@ -33,7 +35,6 @@ export default function ProjectsScreen() {
     () => ({
       title: 'Projects',
       headerShown: true,
-      headerLeft: () => <ProjectsOrganizationMenu />,
     }),
     []
   );
@@ -114,8 +115,15 @@ export default function ProjectsScreen() {
     ),
     [query, setQuery, sortOrder, toggleSort]
   );
+  const listEmpty = useCallback(() => <ProjectsEmptyState compact />, []);
+  const organizationMenu = (
+    <ProjectsOrganizationMenu
+      switchingOrganizationId={switchingOrganizationId}
+      onSwitchingOrganizationIdChange={setSwitchingOrganizationId}
+    />
+  );
 
-  if (isLoading) {
+  if (isLoading || isSwitchingOrganization) {
     return (
       <>
         <Stack.Screen options={screenOptions} />
@@ -128,6 +136,7 @@ export default function ProjectsScreen() {
     return (
       <>
         <Stack.Screen options={screenOptions} />
+        {organizationMenu}
         <ProjectsErrorState onRetry={handleRetry} />
       </>
     );
@@ -137,6 +146,7 @@ export default function ProjectsScreen() {
     return (
       <>
         <Stack.Screen options={screenOptions} />
+        {organizationMenu}
         <ProjectsEmptyState />
       </>
     );
@@ -145,6 +155,7 @@ export default function ProjectsScreen() {
   return (
     <SafeAreaView className="bg-background flex-1" edges={SCREEN_EDGES}>
       <Stack.Screen options={screenOptions} />
+      {organizationMenu}
       <View className="flex-1 px-4 pt-2">
         <FlatList
           data={filteredProjects}
@@ -152,6 +163,7 @@ export default function ProjectsScreen() {
           keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
           ListHeaderComponent={listHeader}
+          ListEmptyComponent={listEmpty}
           contentInsetAdjustmentBehavior="automatic"
           contentContainerClassName="gap-3 py-4"
           showsVerticalScrollIndicator={false}
