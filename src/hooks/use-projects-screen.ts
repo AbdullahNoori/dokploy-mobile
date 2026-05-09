@@ -58,7 +58,7 @@ export function useProjectsScreen(): ProjectsScreenState {
   }, [mutate]);
 
   const hasError = Boolean(error) || isErrorResponse(data);
-  const isEmpty = !isLoading && !hasError && filteredProjects.length === 0;
+  const isEmpty = !isLoading && !hasError && projects.length === 0;
 
   return {
     query,

@@ -2,11 +2,16 @@ import { View } from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { cn } from '@/lib/utils';
 import { CalendarClockIcon } from 'lucide-react-native';
 
-export function ProjectsEmptyState() {
+type Props = {
+  compact?: boolean;
+};
+
+export function ProjectsEmptyState({ compact = false }: Props) {
   return (
-    <View className="flex-1 items-center justify-center gap-2 px-6">
+    <View className={cn('items-center gap-2 px-6', compact ? 'pt-24' : 'flex-1 justify-center')}>
       <Icon as={CalendarClockIcon} className="text-muted-foreground size-6" />
       <Text variant="h4">No projects found</Text>
       <Text variant="muted" className="text-center">

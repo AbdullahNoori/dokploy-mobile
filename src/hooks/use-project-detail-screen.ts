@@ -1,8 +1,9 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useProjectOne } from '@/api/projects';
 import { isErrorResponse } from '@/lib/utils';
 import type {
+  ProjectAllEnvironment,
   ProjectAllResponseBody,
   ProjectApplication,
   ProjectCompose,
@@ -13,10 +14,14 @@ import type {
 
 type ProjectDetailState = {
   project: ProjectAllResponseBody | null;
+  environments: ProjectAllEnvironment[];
+  activeEnvironment: ProjectAllEnvironment | null;
+  activeEnvironmentId: string | null;
   items: ProjectItem[];
   isLoading: boolean;
   isError: boolean;
-  retry: () => void;
+  selectEnvironment: (environmentId: string) => void;
+  retry: () => Promise<void>;
 };
 
 const getDatabaseId = (
@@ -52,6 +57,11 @@ const addItems = <T extends { name: string; createdAt: string }>(
 
 export function useProjectDetailScreen(projectId: string): ProjectDetailState {
   const { data, error, isLoading, mutate } = useProjectOne(projectId);
+  const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedEnvironmentId(null);
+  }, [projectId]);
 
   const project = useMemo(() => {
     if (!data || isErrorResponse(data)) {
@@ -60,20 +70,41 @@ export function useProjectDetailScreen(projectId: string): ProjectDetailState {
     return data;
   }, [data]);
 
+  const environments = useMemo(() => project?.environments ?? [], [project]);
+
+  const activeEnvironment = useMemo(() => {
+    if (!environments.length) return null;
+
+    return (
+      environments.find((environment) => environment.environmentId === selectedEnvironmentId) ??
+      environments[0]
+    );
+  }, [environments, selectedEnvironmentId]);
+
+  const activeEnvironmentId = activeEnvironment?.environmentId ?? null;
+
+  const selectEnvironment = useCallback(
+    (environmentId: string) => {
+      if (environmentId === activeEnvironmentId) return;
+
+      const exists = environments.some(
+        (environment) => environment.environmentId === environmentId
+      );
+      if (!exists) return;
+
+      setSelectedEnvironmentId(environmentId);
+    },
+    [activeEnvironmentId, environments]
+  );
+
   const items = useMemo(() => {
-    if (!project) return [];
-
-    const environments = project.environments ?? [];
-    const defaultEnv =
-      environments.find((env) => env.isDefault) ?? environments[0];
-
-    if (!defaultEnv) return [];
+    if (!activeEnvironment) return [];
 
     const merged: ProjectItem[] = [];
 
     addItems<ProjectApplication>(
       merged,
-      defaultEnv.applications,
+      activeEnvironment.applications,
       'application',
       (item) => item.applicationId,
       (item) => item.applicationStatus
@@ -81,7 +112,7 @@ export function useProjectDetailScreen(projectId: string): ProjectDetailState {
 
     addItems<ProjectCompose>(
       merged,
-      defaultEnv.compose,
+      activeEnvironment.compose,
       'compose',
       (item) => item.composeId,
       (item) => item.composeStatus ?? null
@@ -89,7 +120,7 @@ export function useProjectDetailScreen(projectId: string): ProjectDetailState {
 
     addItems<ProjectDatabase>(
       merged,
-      defaultEnv.postgres,
+      activeEnvironment.postgres,
       'postgres',
       (item) => getDatabaseId(item, 'postgresId', 'postgres'),
       (item) => item.applicationStatus ?? null
@@ -97,7 +128,7 @@ export function useProjectDetailScreen(projectId: string): ProjectDetailState {
 
     addItems<ProjectDatabase>(
       merged,
-      defaultEnv.redis,
+      activeEnvironment.redis,
       'redis',
       (item) => getDatabaseId(item, 'redisId', 'redis'),
       (item) => item.applicationStatus ?? null
@@ -105,7 +136,7 @@ export function useProjectDetailScreen(projectId: string): ProjectDetailState {
 
     addItems<ProjectDatabase>(
       merged,
-      defaultEnv.mysql,
+      activeEnvironment.mysql,
       'mysql',
       (item) => getDatabaseId(item, 'mysqlId', 'mysql'),
       (item) => item.applicationStatus ?? null
@@ -113,7 +144,7 @@ export function useProjectDetailScreen(projectId: string): ProjectDetailState {
 
     addItems<ProjectDatabase>(
       merged,
-      defaultEnv.mongo,
+      activeEnvironment.mongo,
       'mongo',
       (item) => getDatabaseId(item, 'mongoId', 'mongo'),
       (item) => item.applicationStatus ?? null
@@ -121,7 +152,7 @@ export function useProjectDetailScreen(projectId: string): ProjectDetailState {
 
     addItems<ProjectDatabase>(
       merged,
-      defaultEnv.mariadb,
+      activeEnvironment.mariadb,
       'mariadb',
       (item) => getDatabaseId(item, 'mariadbId', 'mariadb'),
       (item) => item.applicationStatus ?? null
@@ -132,19 +163,23 @@ export function useProjectDetailScreen(projectId: string): ProjectDetailState {
       const bTime = new Date(b.createdAt).getTime();
       return bTime - aTime;
     });
-  }, [project]);
+  }, [activeEnvironment]);
 
   const retry = useCallback(() => {
-    void mutate();
+    return mutate().then(() => undefined);
   }, [mutate]);
 
   const hasError = Boolean(error) || isErrorResponse(data);
 
   return {
     project,
+    environments,
+    activeEnvironment,
+    activeEnvironmentId,
     items,
     isLoading,
     isError: hasError,
+    selectEnvironment,
     retry,
   };
 }
