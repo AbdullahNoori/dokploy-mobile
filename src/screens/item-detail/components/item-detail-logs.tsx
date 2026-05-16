@@ -8,6 +8,7 @@ import { createLogPalette, getContainerOptionLabel, getUniqueContainerIds } from
 
 import { LogPanelHeader, LogSourceSelect, LogViewport } from './item-detail-log-panel';
 import { TerminalEmpty, TerminalSkeleton } from './item-detail-log-states';
+import { enableFreeze } from 'react-native-screens';
 
 type Props = {
   hasLookupName: boolean;

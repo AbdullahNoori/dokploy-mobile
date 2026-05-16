@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Platform, RefreshControl, View } from 'react-native';
+import { EaseView, type AnimateProps, type Transition } from 'react-native-ease/uniwind';
 import { useUniwind } from 'uniwind';
 
 import { useNotificationAll } from '@/api/notifications';
@@ -7,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { useHaptics } from '@/hooks/use-haptics';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
+import { getRefreshControlColors } from '@/lib/refresh-control';
 import type { NotificationAllResponseBody } from '@/types/notifications';
-import { THEME } from '@/lib/theme';
 import { cn, isErrorResponse } from '@/lib/utils';
 import { Stack, useRouter } from 'expo-router';
 import { HttpError } from '@/lib/http-error';
-import { BriefcaseMedicalIcon, Plus, PlusIcon } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 
 import { NotificationsCard } from './components/notifications-card';
 import { NotificationsEmptyState } from './components/notifications-empty-state';
@@ -24,6 +26,24 @@ const SCREEN_EDGES = Platform.select({
   android: ['left', 'right'] as const,
   default: ['left', 'top', 'right'] as const,
 });
+const NOTIFICATIONS_ENTER_ANIMATION: AnimateProps = { opacity: 1, translateY: 0 };
+const NOTIFICATIONS_HEADER_INITIAL_ANIMATION: AnimateProps = { opacity: 0, translateY: 8 };
+const NOTIFICATIONS_CARD_INITIAL_ANIMATION: AnimateProps = { opacity: 0, translateY: 8 };
+const NOTIFICATIONS_STATE_INITIAL_ANIMATION: AnimateProps = { opacity: 0 };
+const NOTIFICATIONS_ENTER_EASING: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+function getNotificationsTransition(delay: number, isReducedMotionEnabled: boolean): Transition {
+  if (isReducedMotionEnabled) {
+    return { type: 'none' };
+  }
+
+  return {
+    type: 'timing',
+    duration: 220,
+    easing: NOTIFICATIONS_ENTER_EASING,
+    delay,
+  };
+}
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -32,6 +52,7 @@ export default function NotificationsScreen() {
   const { data, error, isLoading, mutate } = useNotificationAll();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { impact, notifyError, notifySuccess } = useHaptics();
+  const isReducedMotionEnabled = useReducedMotion();
 
   const openCreateSheet = useCallback(async () => {
     await impact();
@@ -81,13 +102,35 @@ export default function NotificationsScreen() {
   }, [isRefreshing, mutate, notifyError, notifySuccess]);
 
   const listHeader = useMemo(
-    () => <NotificationsListHeader count={notifications.length} />,
-    [notifications.length]
+    () => (
+      <EaseView
+        initialAnimate={
+          isReducedMotionEnabled
+            ? NOTIFICATIONS_ENTER_ANIMATION
+            : NOTIFICATIONS_HEADER_INITIAL_ANIMATION
+        }
+        animate={NOTIFICATIONS_ENTER_ANIMATION}
+        transition={getNotificationsTransition(0, isReducedMotionEnabled)}>
+        <NotificationsListHeader count={notifications.length} />
+      </EaseView>
+    ),
+    [isReducedMotionEnabled, notifications.length]
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: NotificationAllResponseBody }) => <NotificationsCard notification={item} />,
-    []
+    ({ item, index }: { item: NotificationAllResponseBody; index: number }) => (
+      <EaseView
+        initialAnimate={
+          isReducedMotionEnabled
+            ? NOTIFICATIONS_ENTER_ANIMATION
+            : NOTIFICATIONS_CARD_INITIAL_ANIMATION
+        }
+        animate={NOTIFICATIONS_ENTER_ANIMATION}
+        transition={getNotificationsTransition(Math.min(index, 6) * 28, isReducedMotionEnabled)}>
+        <NotificationsCard notification={item} />
+      </EaseView>
+    ),
+    [isReducedMotionEnabled]
   );
 
   const keyExtractor = useCallback((item: NotificationAllResponseBody) => item.notificationId, []);
@@ -125,9 +168,27 @@ export default function NotificationsScreen() {
 
       <View className="flex-1 px-4 pt-2">
         {error || dataError ? (
-          <NotificationsErrorState message={errorMessage} onRetry={handleRetry} />
+          <EaseView
+            initialAnimate={
+              isReducedMotionEnabled
+                ? NOTIFICATIONS_ENTER_ANIMATION
+                : NOTIFICATIONS_STATE_INITIAL_ANIMATION
+            }
+            animate={NOTIFICATIONS_ENTER_ANIMATION}
+            transition={getNotificationsTransition(0, isReducedMotionEnabled)}
+            className="flex-1">
+            <NotificationsErrorState message={errorMessage} onRetry={handleRetry} />
+          </EaseView>
         ) : notifications.length === 0 ? (
-          <View className="flex-1">
+          <EaseView
+            initialAnimate={
+              isReducedMotionEnabled
+                ? NOTIFICATIONS_ENTER_ANIMATION
+                : NOTIFICATIONS_STATE_INITIAL_ANIMATION
+            }
+            animate={NOTIFICATIONS_ENTER_ANIMATION}
+            transition={getNotificationsTransition(0, isReducedMotionEnabled)}
+            className="flex-1">
             <View className="pt-4">
               <NotificationsListHeader count={0} />
             </View>
@@ -136,7 +197,7 @@ export default function NotificationsScreen() {
                 void openCreateSheet();
               }}
             />
-          </View>
+          </EaseView>
         ) : (
           <FlatList
             data={notifications}
@@ -149,8 +210,7 @@ export default function NotificationsScreen() {
               <RefreshControl
                 refreshing={isRefreshing}
                 onRefresh={handleRefresh}
-                tintColor={THEME[resolvedTheme].primary}
-                colors={[THEME[resolvedTheme].primary]}
+                {...getRefreshControlColors(resolvedTheme)}
               />
             }
           />

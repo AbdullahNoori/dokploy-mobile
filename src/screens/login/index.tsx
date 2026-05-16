@@ -1,12 +1,14 @@
+import { useCallback, useState } from 'react';
+import { Stack } from 'expo-router';
+import { toast } from 'sonner-native';
+
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { useHaptics } from '@/hooks/use-haptics';
-import { HttpError } from '@/lib/http-error';
 import { normalizeServerUrl } from '@/lib/http-config';
 import { useAuthStore } from '@/store/auth-store';
-import { Stack } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner-native';
+
 import LoginForm from './components/login-form';
+import { getLoginErrorMessage } from './lib/login-error-message';
 
 export default function LoginScreen() {
   const [serverUrl, setServerUrlInput] = useState('');
@@ -64,25 +66,4 @@ export default function LoginScreen() {
       />
     </SafeAreaView>
   );
-}
-
-function getLoginErrorMessage(error: unknown): string {
-  if (error instanceof HttpError) {
-    const status = error.response?.status;
-    const message = error.message?.trim();
-
-    if (status === 401) {
-      return 'Dokploy rejected that token. Check that the PAT is still valid for this server.';
-    }
-
-    if (status === 403) {
-      return 'This token is valid, but it does not have permission for the required Dokploy API.';
-    }
-
-    if (message) {
-      return message;
-    }
-  }
-
-  return 'Unable to connect. Check your URL and token.';
 }

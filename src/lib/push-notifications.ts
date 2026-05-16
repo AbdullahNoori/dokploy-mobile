@@ -1,6 +1,7 @@
 import type { EventSubscription } from 'expo-modules-core';
 import {
   AuthorizationStatus,
+  deleteToken,
   getMessaging,
   getToken,
   onTokenRefresh,
@@ -25,6 +26,12 @@ let notificationResponseSubscription: EventSubscription | null = null;
 let tokenRefreshUnsubscribe: (() => void) | null = null;
 let lastHandledNotificationResponseKey: string | null = null;
 const firebaseMessaging = getMessaging();
+
+export type PushTokenRetirementReason =
+  | 'logout'
+  | 'unauthorized'
+  | 'owner-access-lost'
+  | 'session-change';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -159,6 +166,11 @@ function storePushTokenRecord(record: PushTokenRecord): void {
   setStoredPushTokenRecord(record);
 }
 
+function unsubscribeFromPushTokenRefresh(): void {
+  tokenRefreshUnsubscribe?.();
+  tokenRefreshUnsubscribe = null;
+}
+
 function handleNotificationResponse(
   response: Notifications.NotificationResponse,
   source: 'initial' | 'listener'
@@ -230,7 +242,7 @@ export function subscribeToPushTokenRefresh(): () => void {
 
   const nativePlatform = Platform.OS;
 
-  tokenRefreshUnsubscribe?.();
+  unsubscribeFromPushTokenRefresh();
   tokenRefreshUnsubscribe = onTokenRefresh(firebaseMessaging, (token) => {
     const record = createPushTokenRecord(token, nativePlatform, 'granted');
     storePushTokenRecord(record);
@@ -243,9 +255,38 @@ export function subscribeToPushTokenRefresh(): () => void {
   });
 
   return () => {
-    tokenRefreshUnsubscribe?.();
-    tokenRefreshUnsubscribe = null;
+    unsubscribeFromPushTokenRefresh();
   };
+}
+
+export async function retirePushNotificationTokenAsync(
+  reason: PushTokenRetirementReason
+): Promise<void> {
+  unsubscribeFromPushTokenRefresh();
+
+  try {
+    if (!isNativeMobilePlatform(Platform.OS)) {
+      logPushLifecycleEvent('Push Token Retirement Skipped', {
+        reason,
+        platform: Platform.OS,
+      });
+      return;
+    }
+
+    await deleteToken(firebaseMessaging);
+    logPushLifecycleEvent('Push Token Retired', {
+      reason,
+      platform: Platform.OS,
+      tokenType: 'fcm',
+    });
+  } catch (error) {
+    logPushLifecycleEvent('Push Token Retirement Error', {
+      reason,
+      error,
+    });
+  } finally {
+    clearStoredPushNotificationState();
+  }
 }
 
 export function subscribeToNotificationResponses(): () => void {

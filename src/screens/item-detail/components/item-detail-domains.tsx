@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { PencilIcon, Plus, ShieldCheckIcon, Trash2Icon } from 'lucide-react-native';
+import { ExternalLinkIcon, Plus, ShieldCheckIcon, Trash2Icon } from 'lucide-react-native';
 import { toast } from 'sonner-native';
 import { useUniwind } from 'uniwind';
 
@@ -38,6 +39,28 @@ const resolveErrorMessage = (error: unknown, fallback: string) => {
     if (message) return message;
   }
   return fallback;
+};
+
+const HTTP_URL_PATTERN = /^https?:\/\//i;
+
+const normalizeDomainPath = (path: string | null) => {
+  const trimmedPath = path?.trim();
+  if (!trimmedPath || trimmedPath === '/') return '/';
+  return trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
+};
+
+const getDomainUrl = (domain: ApplicationOneDomain) => {
+  const host = domain.host.trim();
+  const path = normalizeDomainPath(domain.path);
+  const baseUrl = HTTP_URL_PATTERN.test(host)
+    ? host
+    : `${domain.https ? 'https' : 'http'}://${host}`;
+
+  if (path === '/') {
+    return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  }
+
+  return `${baseUrl.replace(/\/+$/, '')}${path}`;
 };
 
 export function ItemDetailDomains({
@@ -118,6 +141,29 @@ export function ItemDetailDomains({
     [impact, isBusy, notifyError, notifySuccess, onRefresh]
   );
 
+  const handleOpenDomain = useCallback(
+    async (domain: ApplicationOneDomain) => {
+      const url = getDomainUrl(domain);
+
+      await impact();
+
+      try {
+        const canOpenUrl = await Linking.canOpenURL(url);
+        if (!canOpenUrl) {
+          await notifyError();
+          toast.error('Unable to open domain right now.');
+          return;
+        }
+
+        await Linking.openURL(url);
+      } catch {
+        await notifyError();
+        toast.error('Unable to open domain right now.');
+      }
+    },
+    [impact, notifyError]
+  );
+
   const openCreateDomain = useCallback(async () => {
     await impact();
     router.push({
@@ -196,20 +242,29 @@ export function ItemDetailDomains({
       ) : (
         <View className="gap-3">
           {domains.map((domain) => (
-            <View key={domain.domainId} className="bg-card border-border/80 rounded-2xl border p-4">
+            <Pressable
+              key={domain.domainId}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${domain.host}`}
+              accessibilityState={{ disabled: isBusy }}
+              className="bg-card border-border/80 active:bg-accent/40 rounded-2xl border p-4"
+              onPress={() => {
+                if (isBusy) return;
+                void openEditDomain(domain);
+              }}>
               <View className="flex-row items-center justify-between gap-2">
-                <Text className="text-base font-semibold">{domain.host}</Text>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="gap-1.5 px-2.5"
-                  disabled={isBusy}
-                  onPress={() => {
-                    void openEditDomain(domain);
+                <Text className="min-w-0 flex-1 text-base font-semibold">{domain.host}</Text>
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={`Open ${domain.host}`}
+                  hitSlop={8}
+                  className="active:bg-accent size-11 items-center justify-center rounded-lg"
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    void handleOpenDomain(domain);
                   }}>
-                  <Icon as={PencilIcon} className="text-secondary-foreground size-3.5" />
-                  {/* <Text className="text-xs">Edit</Text> */}
-                </Button>
+                  <Icon as={ExternalLinkIcon} className="text-muted-foreground size-4" />
+                </Pressable>
               </View>
               <View className="mt-3 flex-row flex-wrap gap-2">
                 <View className="bg-muted rounded-full px-2 py-0.5">
@@ -238,7 +293,10 @@ export function ItemDetailDomains({
                   variant="secondary"
                   className="flex-1 gap-2"
                   disabled={isBusy}
-                  onPress={() => handleValidate(domain)}>
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    void handleValidate(domain);
+                  }}>
                   {activeDomainId === domain.domainId && activeAction === 'validate' ? (
                     <View className="w-4 items-center">
                       <ActivityIndicator size="small" color={secondarySpinner} />
@@ -255,7 +313,10 @@ export function ItemDetailDomains({
                   variant="destructive"
                   className="flex-1 gap-2"
                   disabled={isBusy}
-                  onPress={() => handleDelete(domain)}>
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    void handleDelete(domain);
+                  }}>
                   <Icon as={Trash2Icon} className="size-4 text-white" />
                   <Text className="text-xs">
                     {activeDomainId === domain.domainId && activeAction === 'delete'
@@ -264,7 +325,7 @@ export function ItemDetailDomains({
                   </Text>
                 </Button>
               </View>
-            </View>
+            </Pressable>
           ))}
         </View>
       )}

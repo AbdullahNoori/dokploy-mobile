@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
@@ -17,6 +17,9 @@ export const ProjectsCard = memo(function ProjectsCard({ project }: Props) {
   const serviceCount = getServiceCount(project.environments);
   const serviceLabel = serviceCount === 1 ? '1 service' : `${serviceCount} services`;
   const { impact } = useHaptics();
+  const handlePressIn = useCallback(() => {
+    void impact();
+  }, [impact]);
 
   return (
     <Link
@@ -29,9 +32,7 @@ export const ProjectsCard = memo(function ProjectsCard({ project }: Props) {
       }}
       asChild>
       <Pressable
-        onPressIn={() => {
-          void impact();
-        }}
+        onPressOut={handlePressIn}
         className="bg-card border-border/80 rounded-2xl border px-4 py-3">
         <View className="flex-row items-start justify-between">
           <View className="flex-row items-center gap-2">

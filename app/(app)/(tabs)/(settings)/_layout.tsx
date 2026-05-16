@@ -6,7 +6,8 @@ export default function SettingsLayout() {
       screenOptions={{
         headerBackButtonDisplayMode: 'minimal',
         headerTitle: 'Settings',
-      }}
-    />
+      }}>
+      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+    </Stack>
   );
 }

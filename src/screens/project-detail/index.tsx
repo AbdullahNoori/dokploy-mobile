@@ -40,6 +40,14 @@ export default function ProjectDetailScreen() {
     }),
     [title]
   );
+  const environmentMenu = (
+    <ProjectEnvironmentMenu
+      environments={environments}
+      activeEnvironmentId={activeEnvironmentId}
+      activeEnvironmentName={activeEnvironment?.name}
+      onSelectEnvironment={selectEnvironment}
+    />
+  );
 
   const handleRetry = useCallback(async () => {
     await impact();
@@ -100,12 +108,7 @@ export default function ProjectDetailScreen() {
   return (
     <SafeAreaView className="bg-background flex-1 px-4">
       <Stack.Screen options={screenOptions} />
-      <ProjectEnvironmentMenu
-        environments={environments}
-        activeEnvironmentId={activeEnvironmentId}
-        activeEnvironmentName={activeEnvironment?.name}
-        onSelectEnvironment={selectEnvironment}
-      />
+      {environmentMenu}
       <View className="flex-1 pt-2">
         <FlatList
           data={items}

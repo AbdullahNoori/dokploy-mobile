@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import { Platform, RefreshControl, ScrollView, View } from 'react-native';
+import { EaseView, type AnimateProps, type Transition } from 'react-native-ease/uniwind';
 import { Stack, useRouter } from 'expo-router';
 import { useUniwind } from 'uniwind';
 
@@ -11,8 +13,9 @@ import {
   type HomePriorityItem,
   useHomeHealthOverview,
 } from '@/hooks/use-home-health-overview';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
+import { getRefreshControlColors } from '@/lib/refresh-control';
 import { setPendingRequestsFilters } from '@/lib/requests-filter-route';
-import { THEME } from '@/lib/theme';
 
 import { HomeErrorState } from './components/home-error-state';
 import { HomePriorityRail } from './components/home-priority-rail';
@@ -31,6 +34,45 @@ const SCREEN_OPTIONS = {
   title: 'Home',
   headerShown: true,
 };
+const HOME_SECTION_ANIMATION: AnimateProps = { opacity: 1, translateY: 0 };
+const HOME_SECTION_INITIAL_ANIMATION: AnimateProps = { opacity: 0, translateY: 10 };
+const HOME_PARTIAL_INITIAL_ANIMATION: AnimateProps = { opacity: 0 };
+const HOME_ENTER_EASING: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const HOME_SECTION_DELAY = 55;
+
+function getHomeSectionTransition(index: number, isReducedMotionEnabled: boolean): Transition {
+  if (isReducedMotionEnabled) {
+    return { type: 'none' };
+  }
+
+  return {
+    type: 'timing',
+    duration: 240,
+    easing: HOME_ENTER_EASING,
+    delay: index * HOME_SECTION_DELAY,
+  };
+}
+
+function HomeAnimatedSection({
+  index,
+  isReducedMotionEnabled,
+  children,
+}: {
+  index: number;
+  isReducedMotionEnabled: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <EaseView
+      initialAnimate={
+        isReducedMotionEnabled ? HOME_SECTION_ANIMATION : HOME_SECTION_INITIAL_ANIMATION
+      }
+      animate={HOME_SECTION_ANIMATION}
+      transition={getHomeSectionTransition(index, isReducedMotionEnabled)}>
+      {children}
+    </EaseView>
+  );
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -38,7 +80,10 @@ export default function HomeScreen() {
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const { impact, notifyError, notifySuccess } = useHaptics();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const isReducedMotionEnabled = useReducedMotion();
   const overview = useHomeHealthOverview();
+  const hasPriorityItems = overview.priorityItems.length > 0;
+  const recentDeploymentsSectionIndex = hasPriorityItems ? 3 : 2;
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
@@ -132,45 +177,64 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor={THEME[resolvedTheme].primary}
-            colors={[THEME[resolvedTheme].primary]}
+            {...getRefreshControlColors(resolvedTheme)}
           />
         }>
-        <View className="gap-2">
-          <HomeSectionLabel label="Snapshot" />
-          <HomeSnapshotCards snapshot={overview.snapshot} />
-        </View>
-
-        <View className="gap-2">
-          <HomeSectionLabel label="Requests" />
-          <HomeRequestSignal
-            signal={overview.requestSignal}
-            hasError={overview.hasRequestError}
-            onPress={openRequests}
-          />
-        </View>
-
-        {overview.priorityItems.length > 0 ? (
+        <HomeAnimatedSection index={0} isReducedMotionEnabled={isReducedMotionEnabled}>
           <View className="gap-2">
-            <HomeSectionLabel label="Needs attention" />
-            <HomePriorityRail items={overview.priorityItems} onPressItem={openPriorityItem} />
+            <HomeSectionLabel label="Snapshot" />
+            <HomeSnapshotCards snapshot={overview.snapshot} />
           </View>
+        </HomeAnimatedSection>
+
+        <HomeAnimatedSection index={1} isReducedMotionEnabled={isReducedMotionEnabled}>
+          <View className="gap-2">
+            <HomeSectionLabel label="Requests" />
+            <HomeRequestSignal
+              signal={overview.requestSignal}
+              hasError={overview.hasRequestError}
+              onPress={openRequests}
+            />
+          </View>
+        </HomeAnimatedSection>
+
+        {hasPriorityItems ? (
+          <HomeAnimatedSection index={2} isReducedMotionEnabled={isReducedMotionEnabled}>
+            <View className="gap-2">
+              <HomeSectionLabel label="Needs attention" />
+              <HomePriorityRail items={overview.priorityItems} onPressItem={openPriorityItem} />
+            </View>
+          </HomeAnimatedSection>
         ) : null}
 
-        <View className="gap-2">
-          <HomeSectionLabel label="Recent deployments" />
-          <HomeRecentDeployments
-            deployments={overview.recentDeployments}
-            isLoading={overview.isDeploymentsLoading}
-            hasError={overview.hasDeploymentError}
-            onPressDeployment={openDeployment}
-          />
-        </View>
+        <HomeAnimatedSection
+          index={recentDeploymentsSectionIndex}
+          isReducedMotionEnabled={isReducedMotionEnabled}>
+          <View className="gap-2">
+            <HomeSectionLabel label="Recent deployments" />
+            <HomeRecentDeployments
+              deployments={overview.recentDeployments}
+              isLoading={overview.isDeploymentsLoading}
+              hasError={overview.hasDeploymentError}
+              onPressDeployment={openDeployment}
+            />
+          </View>
+        </HomeAnimatedSection>
 
         {overview.status === 'partial' ? (
-          <Text variant="muted" className="px-1 text-xs">
-            Some optional signals could not be loaded. Pull to refresh to try again.
-          </Text>
+          <EaseView
+            initialAnimate={
+              isReducedMotionEnabled ? HOME_SECTION_ANIMATION : HOME_PARTIAL_INITIAL_ANIMATION
+            }
+            animate={HOME_SECTION_ANIMATION}
+            transition={getHomeSectionTransition(
+              recentDeploymentsSectionIndex + 1,
+              isReducedMotionEnabled
+            )}>
+            <Text variant="muted" className="px-1 text-xs">
+              Some optional signals could not be loaded. Pull to refresh to try again.
+            </Text>
+          </EaseView>
         ) : null}
       </ScrollView>
     </SafeAreaView>
