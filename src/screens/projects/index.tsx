@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Platform, RefreshControl, View } from 'react-native';
+import { EaseView, type AnimateProps, type Transition } from 'react-native-ease/uniwind';
 import { useUniwind } from 'uniwind';
 
 import { useUserGet } from '@/api/user';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
 import { useHaptics } from '@/hooks/use-haptics';
 import { useProjectsScreen } from '@/hooks/use-projects-screen';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
+import { getRefreshControlColors } from '@/lib/refresh-control';
 import type { ProjectAllResponseBody } from '@/types/projects';
-import { THEME } from '@/lib/theme';
 import { Stack } from 'expo-router';
 
 import { ProjectsCard } from './components/projects-card';
@@ -18,6 +20,9 @@ import { ProjectsOrganizationMenu } from './components/projects-organization-men
 import { ProjectsSkeleton } from './components/projects-skeleton';
 
 const CARD_HEIGHT = 96;
+const CARD_ENTER_ANIMATION: AnimateProps = { opacity: 1, translateY: 0 };
+const CARD_INITIAL_ANIMATION: AnimateProps = { opacity: 0, translateY: 8 };
+const CARD_ENTER_EASING: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const SCREEN_EDGES = Platform.select({
   android: ['left'] as const,
   default: ['left', 'top'] as const,
@@ -30,6 +35,7 @@ export default function ProjectsScreen() {
   const { theme } = useUniwind();
   const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
   const { impact, notifyError, notifySuccess } = useHaptics();
+  const isReducedMotionEnabled = useReducedMotion();
   const { data: userGetResponse, error: userGetError, isLoading: isUserGetLoading } = useUserGet();
   const screenOptions = useMemo(
     () => ({
@@ -64,8 +70,26 @@ export default function ProjectsScreen() {
   }, [isUserGetLoading, userGetError, userGetResponse]);
 
   const renderItem = useCallback(
-    ({ item }: { item: ProjectAllResponseBody }) => <ProjectsCard project={item} />,
-    []
+    ({ item, index }: { item: ProjectAllResponseBody; index: number }) => {
+      const transition: Transition = isReducedMotionEnabled
+        ? { type: 'none' }
+        : {
+            type: 'timing',
+            duration: 220,
+            easing: CARD_ENTER_EASING,
+            delay: Math.min(index, 6) * 28,
+          };
+
+      return (
+        <EaseView
+          initialAnimate={isReducedMotionEnabled ? CARD_ENTER_ANIMATION : CARD_INITIAL_ANIMATION}
+          animate={CARD_ENTER_ANIMATION}
+          transition={transition}>
+          <ProjectsCard project={item} />
+        </EaseView>
+      );
+    },
+    [isReducedMotionEnabled]
   );
 
   const keyExtractor = useCallback((item: ProjectAllResponseBody) => item.projectId, []);
@@ -172,8 +196,7 @@ export default function ProjectsScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={onRefresh}
-              tintColor={THEME[resolvedTheme].primary}
-              colors={[THEME[resolvedTheme].primary]}
+              {...getRefreshControlColors(resolvedTheme)}
             />
           }
         />

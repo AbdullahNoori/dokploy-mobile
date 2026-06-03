@@ -13,8 +13,8 @@ import { useItemDetailScreen } from '@/hooks/use-item-detail-screen';
 import type { ProjectItemType } from '@/types/projects';
 import type { ApplicationOneResponseBody } from '@/types/application';
 import type { ComposeOneResponseBody } from '@/types/compose';
+import { getRefreshControlColors } from '@/lib/refresh-control';
 import { isErrorResponse } from '@/lib/utils';
-import { THEME } from '@/lib/theme';
 
 import { ItemDetailActions } from './components/item-detail-actions';
 import { ItemDetailDeployments } from './components/item-detail-deployments';
@@ -232,8 +232,7 @@ export default function ItemDetailScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={onRefresh}
-              tintColor={THEME[resolvedTheme].primary}
-              colors={[THEME[resolvedTheme].primary]}
+              {...getRefreshControlColors(resolvedTheme)}
             />
           }>
           <ItemDetailActions

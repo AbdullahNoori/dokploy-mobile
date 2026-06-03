@@ -7,11 +7,13 @@ const androidGoogleServicesFile =
 const plugins = expo.plugins ?? [];
 const hasRNFirebaseIOSPlugin = plugins.includes('./plugins/with-rn-firebase-ios');
 const hasAndroidNdkVersionPlugin = plugins.includes('./plugins/with-android-ndk-version');
+const hasFmtConstevalFixPlugin = plugins.includes('./plugins/with-fmt-consteval-fix');
 
 const resolvedPlugins = [
   ...plugins,
   ...(!hasRNFirebaseIOSPlugin ? ['./plugins/with-rn-firebase-ios'] : []),
   ...(!hasAndroidNdkVersionPlugin ? ['./plugins/with-android-ndk-version'] : []),
+  ...(!hasFmtConstevalFixPlugin ? ['./plugins/with-fmt-consteval-fix'] : []),
 ];
 
 module.exports = {

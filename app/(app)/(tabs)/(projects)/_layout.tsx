@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { Platform } from 'react-native';
 
 export const unstable_settings = {
-  initialRouteName: 'index',
+  initialRouteName: 'projects',
 };
 
 export default function ProjectsLayout() {
@@ -17,7 +17,7 @@ export default function ProjectsLayout() {
           default: undefined,
         }),
       }}>
-      <Stack.Screen name="index" options={{ title: 'Projects' }} />
+      <Stack.Screen name="projects" options={{ title: 'Projects' }} />
     </Stack>
   );
 }

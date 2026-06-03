@@ -77,10 +77,10 @@ export function HomeRecentDeployments({
               <HomeStatusDot level={deployment.level} />
               <View className="min-w-0 flex-1">
                 <Text className="font-semibold" numberOfLines={1}>
-                  {deployment.serviceName}
+                  -----
                 </Text>
                 <Text variant="muted" className="mt-0.5" numberOfLines={1}>
-                  {subtitle}
+                  ----{' '}
                 </Text>
                 <View className="mt-2 flex-row items-center gap-2">
                   <View className="bg-muted rounded-md px-2 py-0.5">

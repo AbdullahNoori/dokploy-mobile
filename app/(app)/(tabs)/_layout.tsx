@@ -28,7 +28,7 @@ export default function TabLayout() {
   }, [activeTab, selection]);
 
   return (
-    <NativeTabs>
+    <NativeTabs minimizeBehavior="onScrollDown">
       <NativeTabs.Trigger name="(home)">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />

@@ -1,4 +1,6 @@
-# Minimal Uniwind Template
+![Dokploy Mobile banner](assets/images/readme/dokploy-mobile-banner.png)
+
+# Dokploy Mobile
 
 This is a [React Native](https://reactnative.dev/) project built with [Expo](https://expo.dev/) and [React Native Reusables](https://reactnativereusables.com).
 

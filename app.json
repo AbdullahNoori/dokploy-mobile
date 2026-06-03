@@ -21,8 +21,10 @@
       }
     },
     "android": {
+      "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#212121"
       },
       "package": "com.abdullah.dokploymobile",
@@ -34,7 +36,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#000000",
-          "image": "./assets/images/adaptive-icon.png",
+          "image": "./assets/images/splash.png",
           "resizeMode": "contain",
           "imageWidth": 120
         }

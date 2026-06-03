@@ -48,7 +48,6 @@ export function ProjectEnvironmentMenu({
           return (
             <Stack.Toolbar.MenuAction
               key={environment.environmentId}
-              icon="square.stack.3d.up"
               isOn={isActive}
               onPress={() => {
                 void handleSelectEnvironment(environment.environmentId);

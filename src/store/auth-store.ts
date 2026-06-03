@@ -16,6 +16,7 @@ import {
   updateStoredOrganization,
   type StoredOrganization,
 } from '@/lib/http-config';
+import { retirePushNotificationTokenAsync } from '@/lib/push-notifications';
 import { clearStoredPushNotificationState } from '@/lib/push-notification-storage';
 import { clearOrganizationSWRCache } from '@/lib/swr-cache';
 
@@ -230,9 +231,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   logout: async () => {
     const organizationIds = getOrganizations().map((organization) => organization.id);
+    await retirePushNotificationTokenAsync('logout');
     await clearCredentials();
     organizationIds.forEach(clearOrganizationSWRCache);
-    clearStoredPushNotificationState();
     set({
       status: 'signedOut',
       ownerAccessStatus: 'unknown',
@@ -252,14 +253,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const activeOrganizationId = getActiveOrganizationId();
 
+      await retirePushNotificationTokenAsync('unauthorized');
+
       if (activeOrganizationId) {
         await removeStoredOrganization(activeOrganizationId);
         clearOrganizationSWRCache(activeOrganizationId);
       } else {
         await clearCredentials();
       }
-
-      clearStoredPushNotificationState();
 
       if (getActiveOrganization() && getPat()) {
         const activeOrganization = getActiveOrganization();
