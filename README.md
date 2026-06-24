@@ -90,7 +90,6 @@ Useful scripts:
 npm run ios
 npm run android
 npm run web
-npm run screenshots:store
 ```
 
 For a native development build, use Expo's native run commands:
