@@ -54,12 +54,10 @@ sensitive tokens.
 ## Current Status
 
 Dokploy Mobile is open source and under active development. The app is designed
-primarily for iOS and Android operators, with web support useful for development
-and inspection.
+primarily for iOS and Android Devices.
 
 Because the project uses native modules such as Firebase Messaging, full native
-behavior should be tested in a development build or compiled app. Expo Go is
-useful for simple Expo experiments, but it is not the target runtime for the
+behavior should be tested in a development build or compiled app. Expo Go is not the target runtime for the
 complete Dokploy Mobile feature set.
 
 ## Getting Started
