@@ -2,74 +2,125 @@
 
 # Dokploy Mobile
 
-This is a [React Native](https://reactnative.dev/) project built with [Expo](https://expo.dev/) and [React Native Reusables](https://reactnativereusables.com).
+An unofficial native mobile command surface for checking Dokploy projects,
+deployments, logs, requests, notifications, and web server operations from your
+phone.
 
-It was initialized using the following command:
+![MIT License](https://img.shields.io/badge/license-MIT-111827)
+![Expo](https://img.shields.io/badge/Expo-SDK%2055-111827)
+![React Native](https://img.shields.io/badge/React%20Native-0.83-111827)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-111827)
 
-```bash
-npx @react-native-reusables/cli@latest init -t dokploy
-```
+Dokploy Mobile is built for the moments when you are away from your desk but
+still need to understand what is happening on a Dokploy server. It gives
+operators a focused mobile view of projects, services, deployments, request
+traffic, logs, notifications, and owner-only server tools without opening the
+full web dashboard.
+
+## Why It Exists
+
+Production checks rarely wait for a laptop. A deployment can fail while you are
+in transit, a service can stop during a call, or a burst of 5xx responses can
+start before you are back at your desk.
+
+This app is meant to make those first few minutes less blind. Open it, check the
+health snapshot, jump into the service or deployment that needs attention, and
+inspect the logs or request samples that explain what changed.
+
+## What You Can Do
+
+- Monitor Dokploy projects, environments, applications, compose services, and
+  databases from a native mobile interface.
+- See a home health overview with service counts, request health, recent
+  deployments, and priority items that need attention.
+- Inspect deployment history and open live deployment logs when a release needs
+  a closer look.
+- Read container logs for supported services without switching to the web
+  dashboard.
+- Review request logs with search, date, and status filters for quick traffic
+  triage.
+- Manage service domains and environment values where the connected Dokploy API
+  supports it.
+- Configure owner-gated notification targets and receive mobile push
+  notification support through Firebase Messaging.
+- Use owner-only web server tools, including server domain and backup
+  management.
+- Save and switch between organizations on the same Dokploy server.
+
+Server URLs are stored locally, and personal access tokens are kept in secure
+device storage. The app uses MMKV for fast local state and Expo SecureStore for
+sensitive tokens.
+
+## Current Status
+
+Dokploy Mobile is open source and under active development. The app is designed
+primarily for iOS and Android operators, with web support useful for development
+and inspection.
+
+Because the project uses native modules such as Firebase Messaging, full native
+behavior should be tested in a development build or compiled app. Expo Go is
+useful for simple Expo experiments, but it is not the target runtime for the
+complete Dokploy Mobile feature set.
 
 ## Getting Started
 
-To run the development server:
+You will need:
+
+- Node.js
+- npm, yarn, pnpm, or bun
+- A reachable Dokploy server
+- A Dokploy personal access token
+- iOS Simulator, Android Emulator, or a physical device for native testing
+
+Clone the repository and install dependencies:
 
 ```bash
-    npm run dev
-    # or
-    yarn dev
-    # or
-    pnpm dev
-    # or
-    bun dev
+git clone git@github.com:AbdullahNoori/dokploy-mobile.git
+cd dokploy-mobile
+npm install
 ```
 
-This will start the Expo Dev Server. Open the app in:
-
-- **iOS**: press `i` to launch in the iOS simulator _(Mac only)_
-- **Android**: press `a` to launch in the Android emulator
-- **Web**: press `w` to run in a browser
-
-You can also scan the QR code using the [Expo Go](https://expo.dev/go) app on your device. This project fully supports running in Expo Go for quick testing on physical devices.
-
-## Adding components
-
-You can add more reusable components using the CLI:
+Start the Expo development server:
 
 ```bash
-npx react-native-reusables/cli@latest add [...components]
+npm run dev
 ```
 
-> e.g. `npx react-native-reusables/cli@latest add input textarea`
+Useful scripts:
 
-If you don't specify any component names, you'll be prompted to select which components to add interactively. Use the `--all` flag to install all available components at once.
+```bash
+npm run ios
+npm run android
+npm run web
+npm run screenshots:store
+```
 
-## Project Features
+For a native development build, use Expo's native run commands:
 
-- ⚛️ Built with [Expo Router](https://expo.dev/router)
-- 🎨 Styled with [Tailwind CSS](https://tailwindcss.com/) via [Uniwind](https://uniwind.dev/)
-- 📦 UI powered by [React Native Reusables](https://github.com/founded-labs/react-native-reusables)
-- 🚀 New Architecture enabled
-- 🔥 Edge to Edge enabled
-- 📱 Runs on iOS, Android, and Web
+```bash
+npx expo run:ios
+npx expo run:android
+```
 
-## Learn More
+When the app opens, enter your Dokploy server URL and personal access token. The
+server URL is normalized to the Dokploy API path automatically.
 
-To dive deeper into the technologies used:
+## Contributing
 
-- [React Native Docs](https://reactnative.dev/docs/getting-started)
-- [Expo Docs](https://docs.expo.dev/)
-- [Uniwind Docs](https://docs.uniwind.dev/)
-- [React Native Reusables](https://reactnativereusables.com)
+Issues and pull requests are welcome. The project is still evolving, so focused
+changes are easiest to review and merge.
 
-## Deploy with EAS
+Before opening a PR:
 
-The easiest way to deploy your app is with [Expo Application Services (EAS)](https://expo.dev/eas).
+- Keep the change scoped to one behavior or screen.
+- Follow the design system in [design.md](design.md).
+- Reuse the shared UI components and existing data-fetching patterns.
+- Run the relevant TypeScript, lint, or runtime checks for the area you touched.
 
-- [EAS Build](https://docs.expo.dev/build/introduction/)
-- [EAS Updates](https://docs.expo.dev/eas-update/introduction/)
-- [EAS Submit](https://docs.expo.dev/submit/introduction/)
+## License
 
----
+Dokploy Mobile is released under the [MIT License](LICENSE).
 
-If you enjoy using React Native Reusables, please consider giving it a ⭐ on [GitHub](https://github.com/founded-labs/react-native-reusables). Your support means a lot!
+Built and maintained by [Abdullah Noori](https://github.com/AbdullahNoori).
+
+Repository: [github.com/AbdullahNoori/dokploy-mobile](https://github.com/AbdullahNoori/dokploy-mobile)
