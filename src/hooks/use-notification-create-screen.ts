@@ -12,8 +12,6 @@ import { isErrorResponse } from '@/lib/utils';
 
 import { useNotificationsScreen } from './use-notifications-screen';
 
-const CUSTOM_NOTIFICATION_ENDPOINT = 'https://push-notif-ashen.vercel.app/send';
-
 function resolveErrorMessage(error: unknown, fallback: string) {
   if (error instanceof HttpError) {
     return error.message ?? fallback;
@@ -40,6 +38,7 @@ export function useNotificationCreateScreen() {
 
   const pushTokenRecord = getStoredPushTokenRecord();
   const pushToken = pushTokenRecord?.token?.trim() ?? '';
+  const pushNotificationEndpoint = process.env.EXPO_PUBLIC_NOTIFICATION_URL?.trim();
   const hasPushToken = Boolean(pushToken);
   const canSubmit = !isSubmitting;
 
@@ -86,6 +85,14 @@ export function useNotificationCreateScreen() {
       return;
     }
 
+    if (!pushNotificationEndpoint) {
+      const message = 'Push notification endpoint is not configured.';
+      setErrorMessage(message);
+      await notifyError();
+      toast.error(message);
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -96,7 +103,7 @@ export function useNotificationCreateScreen() {
         databaseBackup: toggles['db-backup'],
         dockerCleanup: toggles['docker-cleanup'],
         dokployRestart: toggles['dokploy-restart'],
-        endpoint: CUSTOM_NOTIFICATION_ENDPOINT,
+        endpoint: pushNotificationEndpoint,
         headers: {
           FCM_TOKEN: pushToken,
         },
@@ -127,7 +134,18 @@ export function useNotificationCreateScreen() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [impact, isSubmitting, mutate, name, notifyError, notifySuccess, pushToken, router, toggles]);
+  }, [
+    impact,
+    isSubmitting,
+    mutate,
+    name,
+    notifyError,
+    notifySuccess,
+    pushNotificationEndpoint,
+    pushToken,
+    router,
+    toggles,
+  ]);
 
   return {
     canSubmit,

@@ -17,7 +17,6 @@ import {
   type StoredOrganization,
 } from '@/lib/http-config';
 import { retirePushNotificationTokenAsync } from '@/lib/push-notifications';
-import { clearStoredPushNotificationState } from '@/lib/push-notification-storage';
 import { clearOrganizationSWRCache } from '@/lib/swr-cache';
 
 export type AuthStatus = 'booting' | 'signedOut' | 'signedIn';
@@ -120,7 +119,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       hasOwnerAccess,
       role,
     });
-    clearStoredPushNotificationState();
 
     set({
       status: 'signedIn',
@@ -133,7 +131,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   switchOrganization: async (organizationId) => {
     const organization = await setActiveOrganization(organizationId);
-    clearStoredPushNotificationState();
 
     set({
       ...getOwnerAccessState(organization),
@@ -145,9 +142,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   removeOrganization: async (organizationId) => {
+    const activeOrganizationId = getActiveOrganizationId();
+
+    if (activeOrganizationId === organizationId) {
+      await retirePushNotificationTokenAsync('session-change');
+    }
+
     const { nextActiveOrganization } = await removeStoredOrganization(organizationId);
     clearOrganizationSWRCache(organizationId);
-    clearStoredPushNotificationState();
 
     if (!nextActiveOrganization || !getServerUrl() || !getPat()) {
       set({
@@ -192,6 +194,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const user = await requestUserGet({ skipUnauthorizedHandler: true });
       const hasOwnerAccess = hasOwnerRole(user);
+
+      if (!hasOwnerAccess) {
+        await retirePushNotificationTokenAsync('owner-access-lost');
+      }
+
       updateStoredOrganization({
         id: activeOrganizationId,
         hasOwnerAccess,
@@ -203,6 +210,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         ...getOrganizationStateSnapshot(),
       });
     } catch {
+      await retirePushNotificationTokenAsync('unauthorized');
       set({ ownerAccessStatus: 'error', hasOwnerAccess: false });
     }
   },

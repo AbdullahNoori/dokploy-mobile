@@ -10,6 +10,7 @@ import {
 import * as Notifications from 'expo-notifications';
 import { PermissionsAndroid, Platform } from 'react-native';
 
+import { notificationAll, notificationRemove } from '@/api/notifications';
 import {
   clearStoredPushNotificationState,
   clearStoredPushTokenRecord,
@@ -18,6 +19,8 @@ import {
   setStoredPushTokenRecord,
 } from '@/lib/push-notification-storage';
 import { reactotron } from '@/lib/reactotron';
+import { isErrorResponse } from '@/lib/utils';
+import type { NotificationAllResponseBody } from '@/types/notifications';
 import type { PushPermissionStatus, PushTokenRecord } from '@/types/push-notifications';
 
 const DEFAULT_ANDROID_CHANNEL_ID = 'default';
@@ -171,6 +174,71 @@ function unsubscribeFromPushTokenRefresh(): void {
   tokenRefreshUnsubscribe = null;
 }
 
+function isMobileCustomNotification(
+  notification: NotificationAllResponseBody,
+  endpoint: string,
+  token: string
+): boolean {
+  return (
+    notification.notificationType === 'custom' &&
+    notification.custom?.endpoint === endpoint &&
+    notification.custom.headers?.FCM_TOKEN === token
+  );
+}
+
+async function removeMobileCustomNotificationProvidersAsync(
+  tokenRecord: PushTokenRecord | null,
+  reason: PushTokenRetirementReason
+): Promise<void> {
+  const token = tokenRecord?.token.trim();
+
+  if (!token) {
+    return;
+  }
+
+  const endpoint = process.env.EXPO_PUBLIC_NOTIFICATION_URL?.trim();
+
+  if (!endpoint) {
+    logPushLifecycleEvent('Push Provider Cleanup Skipped', {
+      reason,
+      cause: 'missing-endpoint',
+    });
+    return;
+  }
+
+  try {
+    const notifications = await notificationAll();
+
+    if (isErrorResponse(notifications) || !Array.isArray(notifications)) {
+      logPushLifecycleEvent('Push Provider Cleanup Skipped', {
+        reason,
+        response: notifications,
+      });
+      return;
+    }
+
+    const mobileNotifications = notifications.filter((notification) =>
+      isMobileCustomNotification(notification, endpoint, token)
+    );
+
+    await Promise.allSettled(
+      mobileNotifications.map((notification) =>
+        notificationRemove({ notificationId: notification.notificationId })
+      )
+    );
+
+    logPushLifecycleEvent('Push Providers Removed', {
+      reason,
+      count: mobileNotifications.length,
+    });
+  } catch (error) {
+    logPushLifecycleEvent('Push Provider Cleanup Error', {
+      reason,
+      error,
+    });
+  }
+}
+
 function handleNotificationResponse(
   response: Notifications.NotificationResponse,
   source: 'initial' | 'listener'
@@ -263,8 +331,11 @@ export async function retirePushNotificationTokenAsync(
   reason: PushTokenRetirementReason
 ): Promise<void> {
   unsubscribeFromPushTokenRefresh();
+  const tokenRecord = getStoredPushTokenRecord();
 
   try {
+    await removeMobileCustomNotificationProvidersAsync(tokenRecord, reason);
+
     if (!isNativeMobilePlatform(Platform.OS)) {
       logPushLifecycleEvent('Push Token Retirement Skipped', {
         reason,

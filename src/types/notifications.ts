@@ -156,3 +156,9 @@ export type NotificationCreateCustomRequest = {
 };
 
 export type NotificationCreateCustomResponse = models.ErrorT | NotificationAllResponseBody;
+
+export type NotificationRemoveRequest = {
+  notificationId: string;
+};
+
+export type NotificationRemoveResponse = models.ErrorT | undefined;
